@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SnowPro Core · 21-Day Trainer</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SnowPro">
+<meta name="theme-color" content="#0C1622">
+<style>
+:root{
+  --fjord:#0C1622;      /* deep background */
+  --frost:#16243A;      /* card surface */
+  --frost2:#1D3049;     /* raised surface */
+  --ice:#EAF4F7;        /* primary text */
+  --mist:#8FA6BC;       /* secondary text */
+  --glacier:#5BD0E8;    /* accent / actions */
+  --melt:#6FD19A;       /* correct / good */
+  --amber:#E8C468;      /* mid score */
+  --coral:#E9766F;      /* wrong / weak */
+  --line:#233A56;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  background:var(--fjord);
+  color:var(--ice);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  line-height:1.5;
+  min-height:100vh;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.mono{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+#app{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+a{color:var(--glacier)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+/* ---------- header ---------- */
+.top{display:flex;align-items:baseline;justify-content:space-between;margin:8px 0 4px}
+.top h1{font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
+.top .code{font-size:.72rem;color:var(--mist);letter-spacing:.08em}
+.sub{color:var(--mist);font-size:.82rem;margin-bottom:16px}
+
+/* ---------- partition strip (signature) ---------- */
+.strip{display:grid;grid-template-columns:repeat(21,1fr);gap:3px;margin:10px 0 6px}
+.cell{height:26px;border-radius:3px;background:var(--frost);border:1px solid var(--line);
+  display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}
+.cell span{font-size:.5rem;color:var(--mist);padding-bottom:2px}
+.cell .fill{position:absolute;left:0;right:0;bottom:0;border-radius:2px}
+.cell.today{border-color:var(--glacier)}
+.striplabel{font-size:.68rem;color:var(--mist);margin-bottom:18px}
+.striplabel b{color:var(--ice);font-weight:600}
+
+/* ---------- day list ---------- */
+.phase{margin:20px 0 8px;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+.dayrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--frost);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;margin-bottom:8px;transition:background .15s}
+.dayrow:active{background:var(--frost2)}
+.dnum{min-width:34px;font-size:.78rem;color:var(--glacier)}
+.dtitle{flex:1;font-size:.9rem;font-weight:600}
+.dmeta{font-size:.72rem;color:var(--mist)}
+.badge{font-size:.72rem;padding:3px 8px;border-radius:99px;font-weight:700}
+.b-good{background:rgba(111,209,154,.15);color:var(--melt)}
+.b-mid{background:rgba(232,196,104,.15);color:var(--amber)}
+.b-low{background:rgba(233,118,111,.15);color:var(--coral)}
+.b-none{background:var(--frost2);color:var(--mist);font-weight:500}
+.b-done{background:rgba(91,208,232,.15);color:var(--glacier)}
+
+.homebtns{display:flex;gap:8px;margin-top:20px}
+.ghost{flex:1;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:.85rem;color:var(--mist);text-align:center}
+.ghost:active{background:var(--frost)}
+
+/* ---------- day screen ---------- */
+.back{color:var(--glacier);font-size:.85rem;padding:6px 0;margin-bottom:6px;display:inline-block}
+.dayhead{margin-bottom:14px}
+.dayhead .eyebrow{font-size:.72rem;color:var(--glacier);letter-spacing:.1em}
+.dayhead h2{font-size:1.25rem;font-weight:800;letter-spacing:-.01em;margin-top:2px}
+.dayhead .domain{font-size:.78rem;color:var(--mist);margin-top:2px}
+.tabs{display:flex;background:var(--frost);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+.tab{flex:1;padding:9px 0;border-radius:9px;font-size:.85rem;color:var(--mist);text-align:center;font-weight:600}
+.tab.on{background:var(--frost2);color:var(--ice)}
+
+/* ---------- study ---------- */
+.study li{margin:0 0 12px 18px;font-size:.9rem}
+.study b{color:var(--glacier);font-weight:700}
+.callout{border:1px solid var(--line);border-left:3px solid var(--glacier);background:var(--frost);
+  border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0;font-size:.85rem}
+.callout .ct{font-size:.7rem;letter-spacing:.12em;color:var(--glacier);text-transform:uppercase;margin-bottom:6px}
+.callout li{margin:0 0 8px 16px}
+.callout li:last-child{margin-bottom:0}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82em;background:var(--frost2);
+  padding:1px 5px;border-radius:4px;color:var(--glacier)}
+
+/* ---------- cards ---------- */
+.cardwrap{perspective:1000px;margin-bottom:14px}
+.fcard{position:relative;width:100%;min-height:230px;transform-style:preserve-3d;transition:transform .45s;cursor:pointer}
+.fcard.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--frost);border:1px solid var(--line);border-radius:16px;
+  display:flex;flex-direction:column;justify-content:center;padding:24px;font-size:.95rem}
+.face.back{transform:rotateY(180deg);background:var(--frost2)}
+.face .lbl{position:absolute;top:12px;left:16px;font-size:.65rem;letter-spacing:.12em;color:var(--mist)}
+.face .tap{position:absolute;bottom:12px;right:16px;font-size:.68rem;color:var(--mist)}
+.cardbtns{display:flex;gap:8px}
+.cbtn{flex:1;padding:13px;border-radius:12px;font-weight:700;font-size:.9rem}
+.cbtn.miss{background:rgba(233,118,111,.14);color:var(--coral);border:1px solid rgba(233,118,111,.3)}
+.cbtn.got{background:rgba(111,209,154,.14);color:var(--melt);border:1px solid rgba(111,209,154,.3)}
+.prog{font-size:.75rem;color:var(--mist);margin-bottom:10px;display:flex;justify-content:space-between}
+
+/* ---------- quiz ---------- */
+.qtext{font-size:.98rem;font-weight:600;margin-bottom:6px}
+.qnote{font-size:.75rem;color:var(--glacier);margin-bottom:12px}
+.opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;
+  background:var(--frost);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;margin-bottom:8px;font-size:.9rem;transition:border-color .15s}
+.opt .key{color:var(--mist);font-size:.78rem;min-width:16px;padding-top:2px}
+.opt.sel{border-color:var(--glacier);background:var(--frost2)}
+.opt.right{border-color:var(--melt);background:rgba(111,209,154,.1)}
+.opt.right .key{color:var(--melt)}
+.opt.wrong{border-color:var(--coral);background:rgba(233,118,111,.1)}
+.opt.wrong .key{color:var(--coral)}
+.primary{width:100%;padding:14px;border-radius:12px;background:var(--glacier);color:#06202B;
+  font-weight:800;font-size:.95rem;margin-top:6px}
+.primary:disabled{opacity:.35}
+.verdict{font-size:.85rem;font-weight:700;margin:10px 0 4px}
+.verdict.ok{color:var(--melt)}
+.verdict.no{color:var(--coral)}
+
+/* ---------- results ---------- */
+.result{text-align:center;padding:28px 0 12px}
+.result .big{font-size:3rem;font-weight:800;letter-spacing:-.02em}
+.result .of{color:var(--mist);font-size:.85rem;margin-bottom:6px}
+.result .msg{font-size:.9rem;margin:10px 0 22px}
+.attempts{margin-top:22px;text-align:left}
+.attempts h4{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-bottom:8px}
+.att{display:flex;justify-content:space-between;font-size:.82rem;color:var(--mist);
+  padding:8px 0;border-bottom:1px solid var(--line)}
+.att b{color:var(--ice)}
+
+/* ---------- special days ---------- */
+.spec p{font-size:.9rem;margin-bottom:12px}
+.spec li{margin:0 0 10px 18px;font-size:.88rem}
+.spec h3{font-size:.95rem;margin:18px 0 8px;color:var(--glacier)}
+.toggle{display:flex;align-items:center;gap:10px;width:100%;background:var(--frost);
+  border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:18px;font-size:.9rem;font-weight:600;text-align:left}
+.tick{width:22px;height:22px;border-radius:6px;border:2px solid var(--mist);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#06202B;font-weight:800;font-size:.8rem}
+.toggle.on .tick{background:var(--melt);border-color:var(--melt)}
+
+/* ---------- cheat sheet ---------- */
+.cheat h3{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--glacier);margin:20px 0 8px}
+.cheat li{margin:0 0 7px 18px;font-size:.86rem}
+.notice{font-size:.75rem;color:var(--mist);text-align:center;margin-top:24px}
+/* ---------- full material ---------- */
+.keybox{border:1px solid var(--line);background:var(--frost);border-radius:12px;padding:14px 14px 4px;margin-bottom:18px}
+.keybox .ct{font-size:.68rem;letter-spacing:.12em;color:var(--glacier);text-transform:uppercase;margin-bottom:10px}
+.keybox li{font-size:.85rem}
+.material h3{font-size:.95rem;color:var(--glacier);margin:20px 0 8px;font-weight:700}
+.material p{font-size:.88rem;margin-bottom:10px}
+.material ul{margin:0 0 12px 0}
+.material li{margin:0 0 8px 18px;font-size:.88rem}
+.material b{font-weight:700;color:var(--ice)}
+.material pre{background:#0A1420;border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin:8px 0 12px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.72rem;line-height:1.5;color:#9FD8E8;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:pre}
+table.t{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:.78rem}
+table.t th{color:var(--glacier);text-align:left;font-weight:700;padding:6px 8px;border-bottom:1px solid var(--glacier)}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--line);color:var(--ice);vertical-align:top}
+table.t tr td:first-child{color:var(--mist)}
+.backuparea{width:100%;min-height:150px;background:#0A1420;border:1px solid var(--line);border-radius:10px;
+  color:#9FD8E8;font-family:ui-monospace,Menlo,monospace;font-size:.7rem;padding:10px;margin:8px 0}
+@media (prefers-reduced-motion: reduce){.fcard{transition:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =============== DATA: Days 1-10 =============== */
+const DAYS = [
+{n:1, phase:1, title:"Three-Layer Architecture & Editions", domain:"Domain 1.1 · Architecture",
+study:[
+"<b>Cloud Services layer:</b> authentication, metadata, query parsing/optimization, security, infrastructure management. Charged only when Cloud Services compute exceeds 10% of daily warehouse compute.",
+"<b>Compute layer:</b> virtual warehouses (independent MPP clusters). Per-second billing with a 60-second minimum on each resume.",
+"<b>Storage layer:</b> cloud object storage (S3/Blob/GCS), columnar, compressed micro-partitions. Charged per TB/month.",
+"<b>Editions:</b> Standard → Enterprise → Business Critical → VPS. Each builds on the previous; credits cost more on higher editions.",
+"<b>Enterprise adds:</b> 90-day Time Travel, materialized views, search optimization, multi-cluster warehouses, masking, row access, tagging.",
+"<b>Business Critical adds:</b> HIPAA/PCI, Tri-Secret Secure, PrivateLink, database failover/failback."],
+cards:[
+{q:"What does Enterprise edition add over Standard?",a:"Time Travel up to 90 days, materialized views, search optimization, multi-cluster warehouses, dynamic data masking, column-level security, tag-based masking."},
+{q:"What does Business Critical add over Enterprise?",a:"HIPAA/PCI compliance, Tri-Secret Secure (customer-managed keys via cloud KMS), PrivateLink / Private Service Connect, database failover/failback."},
+{q:"When is Cloud Services usage billed?",a:"Only when daily Cloud Services compute exceeds 10% of daily warehouse compute — the excess is billed."},
+{q:"Minimum billing time when a warehouse resumes?",a:"60 seconds, then per-second after that."},
+{q:"Which layer handles query optimization?",a:"The Cloud Services layer (the optimizer)."}],
+quiz:[
+{id:"q1",q:"A company requires customer-managed encryption keys via their cloud KMS. Which edition is the minimum required?",opts:["Standard","Enterprise","Business Critical","Virtual Private Snowflake"],ans:[2]},
+{id:"q2",q:"Which of the following is TRUE about the Cloud Services layer?",opts:["It runs the actual SQL queries against data","It stores all the table data in compressed format","It manages metadata, authentication, and query optimization","It is charged per second of warehouse uptime"],ans:[2]},
+{id:"q3",q:"A warehouse is resumed and runs for 20 seconds before being suspended. How much is billed?",opts:["20 seconds","60 seconds","30 seconds (rounded)","Nothing — under 1 minute"],ans:[1]},
+{id:"q4",q:"Which two are TRUE about Snowflake's compute layer?",opts:["All warehouses share the same compute cluster","Warehouses can be resized independently","Compute scales with storage automatically","Each warehouse is an independent MPP cluster"],ans:[1,3]},
+{id:"q5",q:"An organization needs database replication and failover for DR. The minimum edition required is:",opts:["Standard","Enterprise","Business Critical","VPS"],ans:[2]}]},
+
+{n:2, phase:1, title:"Organization, Account & Database Objects", domain:"Domain 1.3 · Object Hierarchy",
+study:[
+"<b>Nesting:</b> Organization → Account → Database → Schema → Object. Grant questions live and die on knowing what lives where.",
+"<b>Org-level:</b> accounts, ORGADMIN role, organization listings.",
+"<b>Account-level:</b> users, roles, warehouses, databases, resource monitors, network policies, shares, integrations.",
+"<b>Schema-level:</b> tables, views, stages (named), file formats, sequences, procs, UDFs, pipes, streams, tasks, dynamic tables.",
+"<b>INFORMATION_SCHEMA:</b> per-database, real-time, ~7-day history. <b>ACCOUNT_USAGE:</b> account-wide, ~45 min–3 hr latency, ~1-year history, includes dropped objects.",
+"<b>Sequences:</b> monotonically increasing but NOT gapless."],
+cards:[
+{q:"Difference between INFORMATION_SCHEMA and ACCOUNT_USAGE?",a:"INFO_SCHEMA: per-database, no latency, ~7-day history. ACCOUNT_USAGE: account-wide, ~45 min–3 hr latency, ~1-year history."},
+{q:"Is a stage account-level or schema-level?",a:"Schema-level (named stages). User and table stages are implicit, not schema objects."},
+{q:"What is a pipe?",a:"A schema-level object that wraps a COPY INTO statement for Snowpipe continuous ingestion."},
+{q:"Are sequences gapless?",a:"No — monotonically increasing but may skip values, especially across sessions."},
+{q:"Where do shares live in the hierarchy?",a:"Account level (CREATE SHARE)."}],
+quiz:[
+{id:"q6",q:"Which object is NOT a schema-level object?",opts:["Stage","Pipe","Resource monitor","Stream"],ans:[2]},
+{id:"q7",q:"Which view set should be used to monitor near-real-time query history for the last hour?",opts:["ACCOUNT_USAGE.QUERY_HISTORY","INFORMATION_SCHEMA.QUERY_HISTORY","SNOWFLAKE.QUERY_HISTORY","SHOW QUERIES"],ans:[1]},
+{id:"q8",q:"ACCOUNT_USAGE has up to how long of latency for most views?",opts:["Real-time","Up to 5 minutes","Up to 45 minutes to 3 hours","Up to 24 hours"],ans:[2]},
+{id:"q9",q:"Which is true about sequences in Snowflake?",opts:["Always gapless","Guaranteed sequential with no skips","Monotonically increasing but may have gaps","Reset on every session"],ans:[2]},
+{id:"q10",q:"Which role operates at the organization level?",opts:["ACCOUNTADMIN","ORGADMIN","SYSADMIN","SECURITYADMIN"],ans:[1]}]},
+
+{n:3, phase:1, title:"Sizing, Scaling & Workload Strategy", domain:"Domain 1.4 · Virtual Warehouses",
+study:[
+"<b>Sizes:</b> XS→6XL, each step doubles compute and credits/hour (XS=1, S=2, M=4, L=8, XL=16, 2XL=32 … 6XL=512).",
+"<b>Scale UP/DOWN:</b> change SIZE — fixes slow, complex, spilling queries.",
+"<b>Scale OUT/IN:</b> add clusters (multi-cluster, Enterprise+) — fixes CONCURRENCY and queueing.",
+"<b>Policies:</b> STANDARD = eager scale-out, conservative scale-in. ECONOMY = waits before adding, removes sooner (cheaper, some queueing).",
+"<b>Auto-suspend:</b> default 600 s. Suspend purges the warehouse cache. <b>Auto-resume:</b> default ON.",
+"<b>Snowpark-Optimized:</b> 16× memory, 10× local cache per node. For ML / large-state Snowpark. ~1.5× credits."],
+addendum:{title:"Addendum — Gen2 Standard warehouses (exam-relevant)",items:[
+"Syllabus lists Standard <b>Gen 1 and Gen 2</b>. Gen2 = faster hardware, ~2× on analytics, big gains on DELETE/UPDATE/MERGE.",
+"Set via <code>RESOURCE_CONSTRAINT = STANDARD_GEN_2</code> (or STANDARD_GEN_1). Convertible with ALTER WAREHOUSE.",
+"Gen2 costs ~1.25–1.35× more credits/hr but often finishes faster, so total credits can be similar or lower.",
+"Gen2 sizes: XS–4XL only (no 5XL/6XL). Not for Snowpark-Optimized warehouses.",
+"Convert while suspended to avoid brief overlap billing."]},
+cards:[
+{q:"What does scaling UP solve?",a:"Slow individual queries — more memory and CPU per query."},
+{q:"What does scaling OUT solve?",a:"Concurrency — many users/queries hitting the warehouse at once."},
+{q:"STANDARD vs ECONOMY scaling policy?",a:"STANDARD scales out aggressively to minimize queueing; ECONOMY waits longer to add clusters and removes them sooner — saves credits, allows queueing."},
+{q:"What happens to the warehouse cache on suspend?",a:"Purged. Resume = cold cache."},
+{q:"Credits per hour for an XL warehouse?",a:"16 (XS=1, S=2, M=4, L=8, XL=16, 2XL=32…)."}],
+quiz:[
+{id:"q11",q:"A BI dashboard is slow because 50 analysts query it simultaneously. The warehouse is L. What is the BEST fix?",opts:["Resize to 2XL","Resize to XL","Configure as multi-cluster with min=1, max=4","Enable query acceleration"],ans:[2]},
+{id:"q12",q:"A single ETL query takes 4 hours on a Medium warehouse and spills heavily to remote storage. The BEST fix?",opts:["Add more clusters","Resize to a larger warehouse","Enable auto-suspend","Use ECONOMY policy"],ans:[1]},
+{id:"q13",q:"Default auto-suspend for a new warehouse created in the UI?",opts:["60 seconds","300 seconds","600 seconds","It must be specified at creation"],ans:[2]},
+{id:"q14",q:"ECONOMY scaling policy is preferred when:",opts:["Latency is critical and queueing must be avoided","Cost matters more than avoiding queueing","Running ML workloads","Loading data continuously"],ans:[1]},
+{id:"q15",q:"Which warehouse type is recommended for memory-intensive Snowpark ML workloads?",opts:["Standard Gen 1","Standard Gen 2","Snowpark-Optimized","Multi-cluster Standard"],ans:[2]}]},
+
+{n:4, phase:1, title:"Micro-partitions, Clustering & Table Types", domain:"Domain 1.5 · Storage Concepts",
+study:[
+"<b>Micro-partitions:</b> 50–500 MB uncompressed, columnar, IMMUTABLE — DML writes new partitions. Per-partition min/max metadata drives pruning.",
+"<b>Pruning:</b> Snowflake skips partitions whose min/max cannot match the filter. Visible in Query Profile as partitions scanned vs total.",
+"<b>Clustering key:</b> for multi-TB tables with consistent filter columns; serverless reclustering keeps data organized.",
+"<b>PERMANENT:</b> full Time Travel (90 d Ent+), 7-day Fail-safe. <b>TEMPORARY:</b> session-scoped, max 1-day TT, no Fail-safe. <b>TRANSIENT:</b> until dropped, max 1-day TT, no Fail-safe.",
+"<b>EXTERNAL:</b> read-only pointer to staged files. <b>ICEBERG:</b> open format, read/write, Snowflake- or externally managed. <b>DYNAMIC:</b> declarative refresh via TARGET_LAG."],
+cards:[
+{q:"Size of a micro-partition?",a:"50–500 MB uncompressed; smaller compressed."},
+{q:"Does Fail-safe apply to transient tables?",a:"No. Transient and temporary tables have NO Fail-safe."},
+{q:"Max Time Travel on a temporary table?",a:"1 day, but bounded by the session lifetime."},
+{q:"What is stored in micro-partition metadata?",a:"Min/max per column, distinct counts, null counts, plus column offsets for pruning and columnar reads."},
+{q:"External vs Iceberg tables?",a:"External: read-only, points at staged files. Iceberg: full read/write in Apache Iceberg format, Snowflake- or externally managed."}],
+quiz:[
+{id:"q16",q:"A 50 TB table is filtered constantly on order_date. Most queries scan only the last 30 days. Pruning is poor. The BEST fix?",opts:["Add a materialized view","Define a clustering key on order_date","Enable search optimization","Switch to a transient table"],ans:[1]},
+{id:"q17",q:"Which table types have NO Fail-safe? (Choose three)",opts:["Permanent","Temporary","Transient","External"],ans:[1,2,3]},
+{id:"q18",q:"What is the maximum Time Travel retention for a permanent table on Enterprise edition?",opts:["1 day","7 days","90 days","Unlimited"],ans:[2]},
+{id:"q19",q:"Micro-partitions are:",opts:["Mutable; updated in place","Immutable; DML creates new partitions","Row-oriented","User-configurable in size"],ans:[1]},
+{id:"q20",q:"A Dynamic Table is best described as:",opts:["A traditional view re-run on every query","A declarative pipeline where you specify target lag and Snowflake handles refresh","An external file format","A clone of a base table"],ans:[1]}]},
+
+{n:5, phase:1, title:"View Types & Snowflake Cortex", domain:"Domain 1.5 Views + 1.6 AI/ML",
+study:[
+"<b>Standard view:</b> logical query, recomputed each call. Free, slow on big data.",
+"<b>Materialized view (Ent+):</b> pre-computed, auto-maintained (serverless). Limited SQL: single base table, no UDFs/window functions.",
+"<b>Secure view:</b> hides definition and plan from non-owners; required for Secure Data Sharing; slightly slower.",
+"<b>Notebooks / Streamlit:</b> Python+SQL in Snowsight; Streamlit apps run entirely inside Snowflake on a warehouse.",
+"<b>Snowpark:</b> Python/Java/Scala DataFrames, UDFs, procs running on Snowflake compute.",
+"<b>Cortex AI SQL:</b> COMPLETE, SUMMARIZE, TRANSLATE, SENTIMENT, EXTRACT_ANSWER, CLASSIFY_TEXT, EMBED_TEXT_*.",
+"<b>Cortex Search:</b> managed hybrid (vector + keyword) retrieval over text. <b>Cortex Analyst:</b> natural language → SQL via a semantic model."],
+cards:[
+{q:"When is a materialized view a good choice?",a:"Frequently-queried aggregations on slowly-changing data, where maintenance cost is less than the query savings."},
+{q:"What is hidden by a secure view?",a:"The view definition and optimizer internals — prevents inferring data through query plans."},
+{q:"What does Snowpark let you do?",a:"Run Python/Java/Scala as UDFs, procs, or DataFrame operations on Snowflake compute."},
+{q:"Cortex Search vs Cortex Analyst?",a:"Search = retrieve documents (RAG-style). Analyst = generate SQL from natural language over structured data."},
+{q:"Are materialized views auto-refreshed?",a:"Yes — Snowflake maintains them as base data changes; the background compute is billed."}],
+quiz:[
+{id:"q21",q:"A data product is published to an external account via a share. To hide the underlying join logic, the provider should use:",opts:["Standard view","Materialized view","Secure view","External view"],ans:[2]},
+{id:"q22",q:"Which Cortex feature would best support natural-language Q&A over an internal SQL warehouse?",opts:["Cortex Search","Cortex Analyst","Cortex Complete","Cortex Translate"],ans:[1]},
+{id:"q23",q:"A team wants to call a Python sentiment-scoring function in a SQL CREATE TABLE AS statement. The BEST tool is:",opts:["External function","Snowpark Python UDF","Cortex Complete","Streamlit in Snowflake"],ans:[1]},
+{id:"q24",q:"Materialized views are available starting at which edition?",opts:["Standard","Enterprise","Business Critical","VPS"],ans:[1]},
+{id:"q25",q:"Which is TRUE about a materialized view?",opts:["It is computed at query time","It is auto-refreshed in the background as base data changes","It must be manually refreshed","It costs nothing extra in storage"],ans:[1]}]},
+{n:6, phase:1, title:"Tools & End-of-Phase Review", domain:"Domain 1.2 · Interfaces + review",
+study:[
+"<b>Snowsight:</b> the web UI — worksheets, dashboards, Cortex chat, query profile, admin.",
+"<b>Snowflake CLI:</b> <code>snow</code> — modern Python CLI replacing SnowSQL for new workflows; deploys Native Apps, Streamlit, Snowpark.",
+"<b>SnowSQL / Classic Console:</b> legacy; know they exist, prefer snow + Snowsight.",
+"<b>IDE:</b> official VS Code extension (worksheets, Streamlit, Snowpark Python).",
+"<b>Drivers/connectors:</b> JDBC, ODBC, Python, Node.js, Go, .NET, PHP + Kafka, Spark, Hive metastore.",
+"Spend the rest of today re-doing missed flashcards and quiz questions from Days 1–5."],
+cards:[
+{q:"Snowflake's modern CLI command?",a:"snow (Snowflake CLI), Python-based, replacing SnowSQL for new workflows."},
+{q:"Where do you build dashboards in the Snowflake UI?",a:"Snowsight."},
+{q:"Two connectors for streaming data into Snowflake?",a:"Kafka Connector (Snowpipe or Snowpipe Streaming mode) and Spark Connector."},
+{q:"Which IDE has a first-party Snowflake extension?",a:"Visual Studio Code."},
+{q:"Default warehouse for Snowflake Notebooks?",a:"A small system warehouse may be assigned, but for compute-intensive notebooks you specify your own."}],
+quiz:[
+{id:"q26",q:"Which tool would a data engineer use to deploy a Streamlit app to Snowflake from the command line?",opts:["SnowSQL","Snowflake CLI (snow)","Classic Console","Snowsight"],ans:[1]},
+{id:"q27",q:"Which is NOT a Snowflake-supported connector?",opts:["Kafka","Spark","Hadoop MapReduce native","ODBC"],ans:[2]},
+{id:"q28",q:"A company uses Standard edition. They want 30-day Time Travel. What must change?",opts:["Nothing — Standard supports 30 days","Upgrade to Enterprise (supports up to 90 days)","Use a transient table","Set DATA_RETENTION_TIME_IN_DAYS=30 on the table"],ans:[1]},
+{id:"q29",q:"A 100 TB analytics table is filtered on event_date 95% of the time. Queries are slow due to poor pruning. Best long-term fix?",opts:["Resize the warehouse to 4XL","Add a clustering key on event_date","Convert to a temporary table","Enable auto-suspend"],ans:[1]},
+{id:"q30",q:"A team needs to share data with an external company that has NO Snowflake account. The best option is:",opts:["Direct share to a non-existent account","Reader account","Email a CSV export","Publish to public Marketplace"],ans:[1]}]},
+
+{n:7, phase:2, title:"RBAC — System Roles", domain:"Domain 2.1 · RBAC",
+study:[
+"<b>ORGADMIN:</b> org level; creates accounts. No automatic account-level privileges.",
+"<b>ACCOUNTADMIN:</b> top of account; inherits SECURITYADMIN + SYSADMIN. Use sparingly.",
+"<b>SECURITYADMIN:</b> MANAGE GRANTS globally; can modify/revoke ANY grant; inherits USERADMIN.",
+"<b>USERADMIN:</b> creates users and roles only.",
+"<b>SYSADMIN:</b> creates warehouses/databases/objects. Recommended PARENT for all custom roles.",
+"<b>PUBLIC:</b> every user has it implicitly — grants to it reach everyone.",
+"<b>Hierarchy:</b> ACCOUNTADMIN ← SECURITYADMIN ← USERADMIN, and ACCOUNTADMIN ← SYSADMIN ← custom roles. Draw it from memory today."],
+cards:[
+{q:"Which role creates users?",a:"USERADMIN (or SECURITYADMIN / ACCOUNTADMIN, which inherit it)."},
+{q:"Which role has MANAGE GRANTS globally?",a:"SECURITYADMIN."},
+{q:"Why grant custom roles to SYSADMIN?",a:"So SYSADMIN can see and manage all objects in the account — central administration."},
+{q:"Which role creates databases?",a:"SYSADMIN (or any role granted CREATE DATABASE on the account)."},
+{q:"Can ACCOUNTADMIN see all data by default?",a:"Broadly yes, but masking and row-access policies still apply unless the policy logic exempts it."}],
+quiz:[
+{id:"q31",q:"A new analyst should be able to create users but NOT modify object grants. Which role?",opts:["SECURITYADMIN","USERADMIN","SYSADMIN","ACCOUNTADMIN"],ans:[1]},
+{id:"q32",q:"A custom role DATA_ENGINEER is created. To follow best practices, this role should be granted to:",opts:["PUBLIC","ACCOUNTADMIN directly","SYSADMIN","USERADMIN"],ans:[2]},
+{id:"q33",q:"Which TWO roles have or inherit MANAGE GRANTS?",opts:["USERADMIN","SECURITYADMIN","SYSADMIN","ACCOUNTADMIN"],ans:[1,3]},
+{id:"q34",q:"PUBLIC is best described as:",opts:["A system role for emergency access","The default role automatically granted to every user","A role for read-only access to all objects","A role that cannot own objects"],ans:[1]},
+{id:"q35",q:"An object is owned by role A. Role B has USAGE on the schema. Can role B query the table?",opts:["Yes, USAGE implies SELECT","Only if role B is also granted SELECT on the table","Yes, if role B is a child of role A","No, only owners can query"],ans:[1]}]},
+
+{n:8, phase:2, title:"Authentication, MFA & Network Policies", domain:"Domain 2.1 · Auth & Network",
+study:[
+"<b>Auth options:</b> password + MFA (Duo built in; MFA now required for human password logins), SSO (SAML 2.0), OAuth (Snowflake or External), key-pair RSA, Programmatic Access Tokens.",
+"<b>Key-pair:</b> service accounts — register the public key with <code>ALTER USER … SET RSA_PUBLIC_KEY</code>; private key never leaves the app.",
+"<b>Network policies:</b> IP allow/block lists at account or user level. User-level OVERRIDES account-level.",
+"<b>Private connectivity:</b> AWS PrivateLink / Azure Private Link / GCP Private Service Connect — Business Critical+.",
+"<b>Account identifiers:</b> modern <code>orgname-accountname</code> preferred; legacy locator.region.cloud still works."],
+cards:[
+{q:"Default auth method for new users?",a:"Username/password — but MFA is now required for password-based logins by human users."},
+{q:"Service account auth without storing a password?",a:"Key-pair authentication with an RSA public/private key pair."},
+{q:"Network policy precedence: account vs user?",a:"User-level policy overrides account-level for that user."},
+{q:"Which edition is required for PrivateLink?",a:"Business Critical (or VPS)."},
+{q:"Modern account identifier format?",a:"orgname-accountname (preferred over the legacy locator)."}],
+quiz:[
+{id:"q36",q:"A Python ETL job needs to authenticate without storing passwords. Best method?",opts:["Username + password","OAuth interactive flow","Key-pair authentication","MFA prompt"],ans:[2]},
+{id:"q37",q:"A user has an IP allowlist via a user-level network policy. The account-level policy is more restrictive. The user logs in from an IP allowed by their user policy but blocked by the account policy. Result?",opts:["Blocked — account policy wins","Allowed — user policy overrides for that user","Allowed only if MFA succeeds","Depends on the role used"],ans:[1]},
+{id:"q38",q:"Which authentication option is FALSE for Snowflake?",opts:["SAML 2.0 SSO","OAuth 2.0","LDAP direct binding","Key-pair RSA"],ans:[2]},
+{id:"q39",q:"AWS PrivateLink requires at minimum:",opts:["Standard edition","Enterprise edition","Business Critical edition","VPS edition"],ans:[2]},
+{id:"q40",q:"The recommended account identifier format is:",opts:["account_locator.region.cloud","orgname-accountname","snowflake://account-locator","username@account-locator"],ans:[1]}]},
+
+{n:9, phase:2, title:"Masking, Row Access, Tags & Classification", domain:"Domain 2.2 · Governance",
+study:[
+"<b>Dynamic Data Masking:</b> policy on a COLUMN; returns real or masked value based on role/context. Enterprise+.",
+"<b>Row Access Policy:</b> filters which ROWS come back, per table. Enterprise+.",
+"<b>Object tags:</b> manual key/value labels on objects and columns; drive cost tracking and tag-based masking.",
+"<b>Tag-based masking:</b> attach a policy to a TAG — every tagged column is masked uniformly.",
+"<b>Classification:</b> AUTOMATED detection of sensitive data (semantic + privacy categories); pairs with auto-tagging.",
+"<b>Aggregation policy:</b> forces minimum group sizes (k-anonymity). <b>Projection policy:</b> column usable in filters but not SELECTable.",
+"<b>Trust Center:</b> Snowsight scanners that flag security risks with remediation steps."],
+cards:[
+{q:"Masking vs Row Access — which hides what?",a:"Masking hides/redacts column VALUES. Row access hides entire ROWS."},
+{q:"Tag vs Classification?",a:"Tags are manual labels; Classification is automated sensitive-data detection with built-in categories."},
+{q:"What does Trust Center do?",a:"Runs security scanners against your account and recommends remediation."},
+{q:"What is tag-based masking?",a:"Apply a masking policy to a TAG; every column carrying that tag gets the policy — centralized control."},
+{q:"Aggregation policy use case?",a:"Force GROUP BY results to meet a minimum group size, preventing re-identification of individuals."}],
+quiz:[
+{id:"q41",q:"A compliance analyst wants to automatically detect and label sensitive customer data across databases. Which feature directly enables this?",opts:["Data classification","Object tagging","Dynamic Data Masking","Row access policy"],ans:[0]},
+{id:"q42",q:"An admin wants to evaluate their account against security recommendations. Which feature?",opts:["Trust Center","ACCOUNT_USAGE schema","Access History","Network Policies"],ans:[0]},
+{id:"q43",q:"A column email should appear as ***@***.com for analysts but unredacted for compliance. Best approach?",opts:["Row access policy on the table","Dynamic Data Masking policy on the email column with role-based logic","Network policy restricting analyst IPs","Tag the column as PII"],ans:[1]},
+{id:"q44",q:"A query joins orders + customers. Sales reps should ONLY see their own region's orders. Best feature?",opts:["Dynamic Data Masking","Row Access Policy on orders","Secure view per region","Data classification"],ans:[1]},
+{id:"q45",q:"Tag-based masking is best described as:",opts:["Masking values based on the user's tag","Applying a single masking policy via a tag so all tagged columns get masked uniformly","Encrypting tagged data at rest","Hiding tags from non-owners"],ans:[1]}]},
+
+{n:10, phase:2, title:"Resource Monitors, ACCOUNT_USAGE & Cost", domain:"Domain 2.3 · Monitoring",
+study:[
+"<b>Resource monitors:</b> track CREDIT usage against a quota. Actions: NOTIFY, SUSPEND (queries finish), SUSPEND_IMMEDIATE (kills queries). Free to use.",
+"<b>Scope:</b> account-level (covers serverless like Snowpipe, MV maintenance, reclustering) or specific warehouses. ACCOUNTADMIN creates them.",
+"<b>Frequency:</b> MONTHLY default; also DAILY, WEEKLY, YEARLY, NEVER.",
+"<b>Credit math:</b> per-second after the 60-s minimum. M (4/hr) × 15 min = 1 credit; L (8/hr) × 30 min = 4 credits.",
+"<b>Key views:</b> QUERY_HISTORY, QUERY_ATTRIBUTION_HISTORY (per-query credits), WAREHOUSE_METERING_HISTORY, METERING_DAILY_HISTORY, STORAGE_USAGE, LOGIN_HISTORY, ACCESS_HISTORY, COPY_HISTORY, PIPE_USAGE_HISTORY."],
+cards:[
+{q:"Do resource monitors cost credits?",a:"No — they are free to create and operate."},
+{q:"SUSPEND vs SUSPEND_IMMEDIATE?",a:"SUSPEND lets running queries finish, then suspends. SUSPEND_IMMEDIATE kills running queries instantly."},
+{q:"Can a resource monitor cover Snowpipe credits?",a:"Yes — but only at ACCOUNT scope, which covers serverless features."},
+{q:"Who can create a resource monitor?",a:"ACCOUNTADMIN by default (privilege can be granted onward)."},
+{q:"Which view shows per-query credit attribution?",a:"ACCOUNT_USAGE.QUERY_ATTRIBUTION_HISTORY."}],
+quiz:[
+{id:"q46",q:"How do resource monitors affect credit consumption?",opts:["They consume credits while tracking usage","A fixed monthly charge applies","They track usage at no additional cost","Credits charged per alert"],ans:[2]},
+{id:"q47",q:"A resource monitor is configured to SUSPEND at 100%. A query is mid-execution when 100% is crossed. What happens?",opts:["Query is killed immediately","Query finishes, then warehouse suspends","Query continues; suspension waits for next billing cycle","Query is paused and resumed later"],ans:[1]},
+{id:"q48",q:"To monitor Snowpipe credit consumption, a resource monitor must be:",opts:["Attached to the Snowpipe object","Scoped to a specific warehouse","Set at account level","Resource monitors do not cover Snowpipe"],ans:[2]},
+{id:"q49",q:"Which view contains the credits consumed per query?",opts:["WAREHOUSE_METERING_HISTORY","QUERY_HISTORY","QUERY_ATTRIBUTION_HISTORY","METERING_DAILY_HISTORY"],ans:[2]},
+{id:"q50",q:"A masking policy is on column SSN. ACCOUNTADMIN runs SELECT SSN. Result?",opts:["Always unmasked — ACCOUNTADMIN bypasses policies","Masked or unmasked depending on the policy logic","Error — ACCOUNTADMIN cannot read masked columns","Always masked"],ans:[1]}]},
+{n:11, phase:3, title:"Stages, File Formats & COPY INTO", domain:"Domain 3.1 · Stages & File Formats",
+study:[
+"<b>Internal stages:</b> user stage <code>@~</code> (one per user), table stage <code>@%name</code> (one per table, can't feed a different table), named stage (schema object — use for production).",
+"<b>External stages:</b> S3/Blob/GCS via a STORAGE INTEGRATION (preferred — credentials never exposed).",
+"<b>File formats:</b> CSV, JSON, AVRO, ORC, PARQUET, XML. Create named formats for reuse.",
+"<b>COPY INTO options:</b> ON_ERROR = ABORT_STATEMENT (default) / CONTINUE / SKIP_FILE / SKIP_FILE_n%; FORCE; PURGE; VALIDATION_MODE (RETURN_ERRORS etc.); PATTERN regex.",
+"<b>Directory tables:</b> queryable file catalog on a stage (path, size, last modified, MD5); AUTO_REFRESH via cloud events.",
+"<b>Unloading:</b> COPY INTO @stage from a query. Default 16 MB files, MAX_FILE_SIZE up to 5 GB, SINGLE=TRUE for one file. XML loads but does not unload."],
+cards:[
+{q:"Three internal stage types?",a:"User stage (@~), table stage (@%name), named stage."},
+{q:"Default ON_ERROR behavior of COPY INTO?",a:"ABORT_STATEMENT — the whole load fails on any error."},
+{q:"Best way to manage external cloud credentials?",a:"A storage integration — credentials live in a Snowflake object, never exposed to users."},
+{q:"What is a directory table?",a:"A queryable catalog of files in a stage with metadata columns (RELATIVE_PATH, SIZE, LAST_MODIFIED, MD5, ETAG)."},
+{q:"Default unload file size limit?",a:"16 MB by default; configurable up to 5 GB via MAX_FILE_SIZE."}],
+quiz:[
+{id:"q51",q:"A COPY INTO load fails on row 5 of 1000. With default settings, what happens?",opts:["First 4 rows are loaded; remainder skipped","Entire statement aborts; nothing loaded","File is skipped; load continues on next file","Bad row is logged and load continues"],ans:[1]},
+{id:"q52",q:"An ETL pipeline must load from S3 without exposing AWS access keys to developers. Best approach?",opts:["Inline credentials in CREATE STAGE","Storage integration object","External token","User stage upload"],ans:[1]},
+{id:"q53",q:"To list files in a stage via SQL with metadata like file size and last-modified date, you should:",opts:["Run LIST @stage","Create a directory table on the stage","Query INFORMATION_SCHEMA.STAGES","Use SHOW FILES"],ans:[1]},
+{id:"q54",q:"Which stage is automatically created per user with no DDL?",opts:["Named stage","Table stage @%TABLE","User stage @~","External stage"],ans:[2]},
+{id:"q55",q:"Which file format is NOT supported when UNLOADING data with COPY INTO @stage?",opts:["CSV","JSON","XML","Parquet"],ans:[2],note:"Unloading supports CSV, JSON and Parquet. XML (plus Avro and ORC) are load-only formats."}]},
+
+{n:12, phase:3, title:"Snowpipe & Snowpipe Streaming", domain:"Domain 3.2 · Snowpipe",
+study:[
+"<b>Snowpipe (classic):</b> wraps COPY INTO; triggered by cloud events (S3→SQS, Blob→Event Grid, GCS→Pub/Sub) or REST API. Serverless. ~1 min latency. ON_ERROR default = SKIP_FILE.",
+"<b>Billing:</b> per-file overhead + per-second serverless compute → PIPE_USAGE_HISTORY.",
+"<b>Snowpipe Streaming:</b> row-level via SDK, no files, sub-second latency.",
+"<b>Kafka Connector modes:</b> Snowpipe (file/micro-batch) vs Snowpipe Streaming (row-level, cheaper at scale).",
+"<b>Monitoring:</b> SYSTEM$PIPE_STATUS() and COPY_HISTORY.",
+"<b>Openflow:</b> not tested until globally GA — skip."],
+cards:[
+{q:"Snowpipe latency target?",a:"Around 1 minute — micro-batch, not real-time."},
+{q:"Snowpipe Streaming latency?",a:"Sub-second to a few seconds — true row-level streaming."},
+{q:"Who provides compute for Snowpipe?",a:"Snowflake (serverless) — no user warehouse."},
+{q:"How to view Snowpipe errors?",a:"SYSTEM$PIPE_STATUS() and the COPY_HISTORY view."},
+{q:"Two ways to trigger Snowpipe?",a:"Cloud event notifications (SQS / Event Grid / Pub/Sub) or the REST API."}],
+quiz:[
+{id:"q56",q:"A pipeline needs sub-second latency for thousands of events per second. Best Snowflake feature?",opts:["Snowpipe with cloud notifications","Snowpipe Streaming","COPY INTO on a scheduled task","Dynamic Table"],ans:[1]},
+{id:"q57",q:"Snowpipe (classic) compute is billed:",opts:["Per-file overhead + per-second compute","Per warehouse credit only","Flat monthly fee","Per row inserted"],ans:[0]},
+{id:"q58",q:"A file arrives in S3. The Snowpipe is configured with AUTO_INGEST=TRUE. What triggers the load?",opts:["A scheduled task polls every minute","An S3 event notification → SQS queue subscribed by the pipe","A manual REST API call","Snowflake scans S3 every 10 seconds"],ans:[1]},
+{id:"q59",q:"Which view reports Snowpipe load errors?",opts:["QUERY_HISTORY","COPY_HISTORY","WAREHOUSE_METERING_HISTORY","LOGIN_HISTORY"],ans:[1]},
+{id:"q60",q:"True about Snowpipe Streaming:",opts:["Requires files staged in cloud storage","Operates row-by-row via SDK with no file requirement","Uses a customer warehouse for compute","Has minute-level latency"],ans:[1]}]},
+
+{n:13, phase:3, title:"CDC & Orchestration", domain:"Domain 3.2 · Streams, Tasks, Dynamic Tables",
+study:[
+"<b>Streams:</b> CDC trackers; offset advances when consumed in DML (on COMMIT). Types: STANDARD (I/U/D), APPEND_ONLY (inserts only), INSERT_ONLY (external tables).",
+"<b>Staleness:</b> a stream not consumed within the source's DATA_RETENTION_TIME_IN_DAYS goes stale and must be recreated (extend with MAX_DATA_EXTENSION_TIME_IN_DAYS).",
+"<b>Tasks:</b> scheduled SQL — CRON or interval, warehouse or serverless (USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE). Child tasks chain via AFTER parent → DAGs.",
+"<b>Dynamic Tables:</b> declare SELECT + TARGET_LAG; Snowflake computes incremental refresh (falls back to full refresh for some SQL).",
+"<b>Choosing:</b> Dynamic Tables for declarative pipelines; Streams+Tasks for complex imperative logic; MVs for single-table aggregations."],
+cards:[
+{q:"When does a stream advance its offset?",a:"When consumed in a DML statement — the offset advances on COMMIT."},
+{q:"Append-only vs standard stream?",a:"Append-only tracks only INSERTs (faster, lighter). Standard tracks INSERT + UPDATE + DELETE."},
+{q:"What makes a stream stale?",a:"Not consuming it within the source's DATA_RETENTION_TIME_IN_DAYS window."},
+{q:"Dynamic Tables vs Streams+Tasks?",a:"Dynamic Tables when you can declare the result with SELECT and let Snowflake refresh. Streams+Tasks for complex multi-step logic."},
+{q:"How are child tasks triggered in a DAG?",a:"Defined with AFTER parent; they run when the parent completes successfully."}],
+quiz:[
+{id:"q61",q:"An hourly pipeline reads a Stream and merges changes into a target. The source has DATA_RETENTION_TIME_IN_DAYS=1. The pipeline misses 2 days. Result?",opts:["Pipeline resumes from last offset","Stream is stale; must be recreated and reprocessed","Stream extends retention automatically","Snowflake throws an error and pauses"],ans:[1]},
+{id:"q62",q:"A team wants Snowflake to auto-refresh a derived table every 5 minutes with minimal code. Best choice?",opts:["Stream + Task on a 5-minute schedule","Dynamic Table with TARGET_LAG = 5 minutes","Materialized view","Snowpipe"],ans:[1]},
+{id:"q63",q:"Which stream type only captures new rows (no updates/deletes) on a regular table?",opts:["STANDARD","APPEND_ONLY","INSERT_ONLY","CHANGES_ONLY"],ans:[1]},
+{id:"q64",q:"A serverless task differs from a regular task because:",opts:["It runs on a customer warehouse","It runs on Snowflake-managed compute","It has unlimited execution time","It can't chain"],ans:[1]},
+{id:"q65",q:"A child task is triggered:",opts:["On a CRON schedule of its own","When its parent task completes successfully","Manually only","On every DML on a watched table"],ans:[1]}]},
+
+{n:14, phase:3, title:"Drivers, Integrations & Phase Review", domain:"Domain 3.3 · Connectors + review",
+study:[
+"<b>Drivers:</b> JDBC, ODBC, .NET, Go, Node.js, PHP, Python.",
+"<b>Storage integration:</b> cloud object storage access. <b>API integration:</b> lets External Functions call HTTPS endpoints (Lambda, Azure Functions).",
+"<b>External Functions:</b> call code outside Snowflake — slower than Snowpark UDFs (HTTPS round trip).",
+"<b>Git integration:</b> CREATE GIT REPOSITORY mounts a repo as a stage — configs, Streamlit, Native App files, CI/CD.",
+"<b>Notification integration:</b> Snowflake → SNS / Event Grid / Pub/Sub or email (alerts, error pipes).",
+"Re-do missed quizzes and flashcards from Days 7–13."],
+cards:[
+{q:"Storage Integration vs API Integration?",a:"Storage → cloud object storage access. API → calling external HTTPS endpoints via External Functions."},
+{q:"Two Kafka Connector modes?",a:"Snowpipe-based (file) and Snowpipe Streaming-based (row-level)."},
+{q:"What does CREATE GIT REPOSITORY enable?",a:"Mounting a Git repo as a stage to reference repo files inside Snowflake."},
+{q:"External Function latency vs Snowpark UDF?",a:"External Functions are slower — cross-cloud HTTPS call vs in-Snowflake compute."},
+{q:"What is a notification integration?",a:"An object letting Snowflake send alerts/messages to a cloud messaging service or email."}],
+quiz:[
+{id:"q66",q:"A 2 TB file needs to be loaded. The most efficient COPY INTO approach is to:",opts:["Load the single 2 TB file as-is on an XL warehouse","Split into ~100–250 MB compressed chunks and load in parallel","Convert to JSON first","Use Snowpipe Streaming"],ans:[1]},
+{id:"q67",q:"A stream's source is dropped and recreated with the same name. What happens?",opts:["Stream continues seamlessly","Stream is invalidated and must be recreated","Stream auto-rebinds to the new table","Snowflake errors at next query"],ans:[1]},
+{id:"q68",q:"To call AWS Lambda from Snowflake SQL, you need:",opts:["A storage integration","An API integration + External Function","A Snowpipe","A Snowpark UDF"],ans:[1]},
+{id:"q69",q:"The PRIMARY benefit of a storage integration over inline credentials is:",opts:["Faster loads","No credentials are exposed to users","Lower storage cost","Supports more file formats"],ans:[1]},
+{id:"q70",q:"To stream rows directly from a Java app into Snowflake with sub-second latency, use:",opts:["COPY INTO on a scheduled task","Snowpipe (classic) via S3","Snowpipe Streaming via Java SDK","External Function"],ans:[2]}]},
+
+{n:15, phase:0, type:"exam", title:"Practice Exam #1", domain:"Full-length · 100 Q · 115 min",
+spec:{intro:"No new study today. Take the official Snowflake practice exam (linked from the SnowPro Core study guide page). Backup options: Examtopics, Whizlabs, Udemy practice sets.",
+steps:["Block 2 uninterrupted hours. No notes, no docs, no Google.","Budget ~70 seconds per question.","Afterwards, review EVERY question — right or wrong.","Write down each concept you weren't 100% sure on: that's your Day 20 weak list."],
+score:"75%+ = on track. 65–75% = focus weak domains Days 16–20. Below 65% = push the exam a week if you can."}},
+{n:16, phase:4, title:"Query Profile, Spilling & Pruning", domain:"Domain 4.1 · Query Profile",
+study:[
+"<b>Where:</b> Snowsight → Query History → query → Query Profile tab.",
+"<b>Local spilling:</b> ran out of memory, used warehouse SSD — tolerable; scale up helps.",
+"<b>Remote spilling:</b> exhausted SSD too, using object storage — 10–100× slower. Almost always: scale UP.",
+"<b>Partitions scanned vs total:</b> the pruning ratio. Scanning most partitions on a selective filter = pruning failed → clustering key or Search Optimization.",
+"<b>Exploding joins:</b> output rows ≫ input rows — missing/wrong join keys, accidental cross-product.",
+"<b>Queueing:</b> waiting for warehouse capacity → scale OUT (clusters).",
+"<b>QUERY_ATTRIBUTION_HISTORY:</b> credits per query — chargeback and cost hunting."],
+cards:[
+{q:"Local vs remote disk spilling?",a:"Local = warehouse SSD (tolerable, fix with a larger size). Remote = object storage (very slow — definitely scale up or refactor)."},
+{q:"Symptom of an exploding join?",a:"Output row count many times larger than input — huge intermediate results in the profile."},
+{q:"What does high queueing time indicate?",a:"Warehouse under-provisioned for concurrency → add clusters (scale out)."},
+{q:"Where is per-query credit cost reported?",a:"ACCOUNT_USAGE.QUERY_ATTRIBUTION_HISTORY."},
+{q:"Ideal pruning ratio?",a:"A small fraction of partitions scanned on filtered queries; scanning nearly all = pruning failed."}],
+quiz:[
+{id:"q71",q:"Query Profile shows Bytes spilled to remote storage = 200 GB. The BEST first fix is to:",opts:["Add a clustering key","Scale UP the warehouse to a larger size","Enable query acceleration","Add a materialized view"],ans:[1]},
+{id:"q72",q:"A query filtered on customer_id = 12345 on a 5 TB table scans 95% of micro-partitions. Best fix?",opts:["Resize warehouse","Enable Search Optimization Service on customer_id","Add a materialized view","Use ECONOMY policy"],ans:[1]},
+{id:"q73",q:"High queueing on a warehouse running BI dashboards. Best fix?",opts:["Resize from L to 2XL","Add clusters (multi-cluster, scale out)","Enable auto-suspend","Switch to Snowpark-optimized"],ans:[1]},
+{id:"q74",q:"An exploding join is identified. The BEST corrective action is to:",opts:["Increase warehouse size","Review the join keys for completeness/uniqueness","Add Search Optimization","Enable result cache"],ans:[1]},
+{id:"q75",q:"QUERY_ATTRIBUTION_HISTORY is used for:",opts:["Tracking failed logins","Per-query credit cost reporting","Storage cost reporting","Tracking grants"],ans:[1]}]},
+
+{n:17, phase:4, title:"The Three Caches", domain:"Domain 4.3 · Caching",
+study:[
+"<b>Result Cache:</b> Cloud Services, 24 h, extended on reuse up to a 31-day hard limit, shared account-wide (with privileges).",
+"<b>Invalidation:</b> data changed, non-deterministic functions (CURRENT_TIMESTAMP, RANDOM…), reclustering, role lacks visibility.",
+"<b>Metadata Cache:</b> Cloud Services, persistent — COUNT(*), MIN/MAX, DESCRIBE/SHOW answered without a warehouse.",
+"<b>Warehouse cache:</b> per-warehouse local SSD; dropped on suspend or resize; mostly retained when clusters scale out.",
+"<b>Lookup order:</b> Result → Metadata → Warehouse (local) → Remote storage."],
+cards:[
+{q:"Result Cache lifetime?",a:"24 hours, extended on each reuse, up to a 31-day hard limit."},
+{q:"What kills the warehouse cache?",a:"Suspend, resize, or warehouse failure. Cluster scale-out does NOT kill it."},
+{q:"Cache lookup order?",a:"Result → Metadata → Local (warehouse) → Remote storage."},
+{q:"Does SELECT COUNT(*) need to start the warehouse?",a:"Not necessarily — the Metadata Cache can answer instantly."},
+{q:"Why might a result NOT come from the Result Cache?",a:"Data changed, non-deterministic function, different role/visibility, SQL text differs, or window expired."}],
+quiz:[
+{id:"q76",q:"A query runs at 09:00 and again at 10:00 with no data changes, same user. The second returns in milliseconds. Which cache served it?",opts:["Warehouse cache","Result cache","Metadata cache","Persistent disk cache"],ans:[1]},
+{id:"q77",q:"A warehouse is suspended overnight. Next morning a similar workload runs slower than yesterday. Why?",opts:["Result cache expired","Warehouse local cache was dropped on suspend; cold start","Snowflake throttled the warehouse","Compute pricing changed"],ans:[1]},
+{id:"q78",q:"Which query is most likely served by the metadata cache alone (no warehouse needed)?",opts:["SELECT * FROM orders WHERE region='APAC'","SELECT COUNT(*) FROM orders","SELECT customer_id, SUM(amount) FROM orders GROUP BY 1","SELECT * FROM orders ORDER BY date DESC LIMIT 100"],ans:[1]},
+{id:"q79",q:"Result cache is shared across:",opts:["Only the same session","Only the same warehouse","The entire account, subject to privileges","Only the same role"],ans:[2]},
+{id:"q80",q:"A query uses CURRENT_TIMESTAMP(). Will the result cache serve it?",opts:["Yes, always","Yes, but only within 1 minute","No — non-deterministic functions disable result cache reuse","Only if the data is unchanged"],ans:[2]}]},
+
+{n:18, phase:4, title:"Clustering, MVs, SOS & Query Acceleration", domain:"Domain 4.2 · Optimization Services",
+study:[
+"<b>Clustering key:</b> keeps partitions organized on chosen columns. Range/equality filters on huge (>~1 TB) tables. Serverless reclustering credits.",
+"<b>Materialized View (Ent+):</b> pre-computed aggregation, auto-maintained. Storage + maintenance cost.",
+"<b>Search Optimization (Ent+):</b> persistent search structure for point lookups / substring / geo on non-clustered columns.",
+"<b>Query Acceleration (Ent+):</b> serverless boost for outlier large queries on a small warehouse. Pay per use.",
+"<b>Decision tree:</b> range scans on big tables → clustering · point lookups → SOS · repeated aggregations → MV · occasional huge query → QAS · remote spilling → scale UP · queueing → scale OUT."],
+cards:[
+{q:"Which optimization helps point lookups on a non-clustered column?",a:"Search Optimization Service."},
+{q:"Best for filtering huge tables on date ranges?",a:"A clustering key on the date column."},
+{q:"Cost model of Query Acceleration?",a:"Pay-per-use serverless compute that supplements the warehouse only when a query is large enough to benefit."},
+{q:"When does clustering NOT help?",a:"Small tables, rapidly changing filter patterns, unselective filters — cost can exceed benefit."},
+{q:"Materialized view limitations?",a:"Single base table (classic MVs), no UDFs or window functions, restricted aggregates."}],
+quiz:[
+{id:"q81",q:"A 10 TB orders table is filtered constantly on order_date. Pruning is 30% (poor). Best fix?",opts:["Materialized view on order_date","Clustering key on order_date","Search Optimization on order_date","Query Acceleration"],ans:[1]},
+{id:"q82",q:"A users table has 500M rows. Most queries are WHERE email = '...'. Email is not clustered. Best?",opts:["Add clustering key on email","Enable Search Optimization","Create a materialized view","Resize warehouse to XL"],ans:[1]},
+{id:"q83",q:"A BI dashboard runs the same daily aggregation thousands of times. The underlying data changes hourly. Best?",opts:["Materialized view","Clustering key","Search Optimization","Result cache only"],ans:[0]},
+{id:"q84",q:"A small warehouse handles 99% of queries well, but 1% of large ad-hoc queries are slow. No permanent resize wanted. Best?",opts:["Enable Query Acceleration Service on the warehouse","Enable Search Optimization","Add a clustering key","Switch to ECONOMY scaling policy"],ans:[0]},
+{id:"q85",q:"Reclustering credits are billed as:",opts:["Warehouse credits, charged to the user's warehouse","Serverless credits, charged automatically","Storage credits","Free of charge"],ans:[1]}]},
+
+{n:19, phase:5, title:"Time Travel, Fail-safe, Cloning & Sharing", domain:"Domain 5 · Collaboration",
+study:[
+"<b>Time Travel:</b> AT/BEFORE, UNDROP. Default 1 day; Ent+ permanent up to 90 days; transient/temp max 1 day everywhere. Child objects inherit retention; explicit setting overrides.",
+"<b>Fail-safe:</b> 7 days, permanent tables only, NOT user-queryable, cannot be configured — Snowflake support recovery.",
+"<b>Zero-copy clone:</b> metadata only; copy-on-write divergence. Pipes and load history NOT cloned by default.",
+"<b>Secure Data Sharing:</b> zero copy; provider pays storage, consumer pays compute; same region (else replicate first); consumer read-only.",
+"<b>Reader accounts:</b> for consumers without Snowflake — provider pays everything.",
+"<b>Marketplace:</b> public or private listings, free or paid. <b>Clean Rooms:</b> multi-party analytics without exposing raw data. <b>Native Apps:</b> run inside the consumer's account.",
+"<b>Replication (Ent+) / Failover (BC+):</b> cross-region DR and cross-region sharing."],
+cards:[
+{q:"Default Time Travel retention for a permanent table?",a:"1 day; configurable up to 90 days on Enterprise+."},
+{q:"Is Fail-safe queryable?",a:"No — recovery only via Snowflake support."},
+{q:"Does cloning copy data?",a:"No — metadata only; storage diverges via copy-on-write as either side changes."},
+{q:"Sharing with a consumer in a different region?",a:"Replicate the database to that region first, then share from the replica."},
+{q:"What is a reader account for?",a:"Sharing with a consumer that has no Snowflake account; provider manages and pays for it."}],
+quiz:[
+{id:"q86",q:"A table is accidentally dropped on Standard edition with default settings. It is 8 days later. Can it be recovered?",opts:["Yes, via Time Travel (UNDROP)","Yes, via Fail-safe (contact Snowflake support)","No — past both TT (1 day) and Fail-safe (7 days) windows","Yes, by cloning"],ans:[2]},
+{id:"q87",q:"A consumer in a different cloud region wants to read shared data. What is needed?",opts:["Direct share — Snowflake handles cross-region","Database replication to the consumer's region, then share from replica","Marketplace listing","Reader account in consumer's region"],ans:[1]},
+{id:"q88",q:"Which is TRUE about cloning?",opts:["Pipes and load history ARE cloned by default","Clone copies all underlying storage","Clone is metadata-only; storage diverges as changes occur","Cloning is only allowed within the same schema"],ans:[2]},
+{id:"q89",q:"A bank wants to collaborate with an advertiser on overlapping customers, without either party exposing raw PII. Best feature?",opts:["Reader account","Direct share with secure views","Data Clean Room","Marketplace listing"],ans:[2]},
+{id:"q90",q:"Fail-safe for a transient table is:",opts:["7 days","1 day","Not available — transient tables have no Fail-safe","Configurable"],ans:[2]}]},
+
+{n:20, phase:0, type:"review", title:"Weak-Spot Review", domain:"Re-derive everything you missed",
+spec:{intro:"Nothing new today. Hour 1: re-do every quiz question you got wrong (the app has collected them below). Hour 2: re-do missed flashcards; for anything still fuzzy, read the official doc page for that exact term.",
+steps:["Three-layer architecture and what each layer does","Edition feature gating (what Enterprise unlocks)","RBAC hierarchy — draw it","Time Travel vs Fail-safe matrix","Three caches and lookup order","Scaling UP vs OUT","Clustering vs MV vs SOS vs QAS","Snowpipe vs Streaming vs Streams+Tasks vs Dynamic Tables","Masking vs row-access vs tag vs classification","Cloning — included vs excluded"],
+score:"If you can't explain each of these in two sentences without notes, look it up."}},
+
+{n:21, phase:0, type:"exam", title:"Practice Exam #2 + Exam Day", domain:"Final gate · aim 80%+",
+spec:{intro:"Practice Exam #2 in the morning, timed and closed-book. Score 80%+ before sitting the real thing. Light review only afterwards — no cramming, sleep early.",
+steps:["70 seconds per question. Flag long ones, come back.","Watch BEST / MOST — several answers may be technically true; pick the most Snowflake-native.","Multi-select questions state the count. Pick exactly that many.","Eliminate the 1–2 obvious distractors first.","Edition gating is a trap: Standard edition + MV/SOS/masking/multi-cluster in an answer = wrong.","The exam uses Snowflake DEFAULTS, not your org's settings."],
+score:"You've got this. Three weeks of prep + daily-user experience = comfortable pass."}}
+];
+
+const CHEAT = [
+{h:"Editions",items:["Standard: base, 1-day TT","Enterprise: 90-day TT, MV, SOS, multi-cluster, masking, row access, tagging","Business Critical: HIPAA/PCI, Tri-Secret, PrivateLink, failover","VPS: fully isolated environment"]},
+{h:"System roles",items:["ORGADMIN — org level, manages accounts","ACCOUNTADMIN — inherits SECURITYADMIN + SYSADMIN","SECURITYADMIN — MANAGE GRANTS","USERADMIN — creates users/roles only","SYSADMIN — creates objects; parent of custom roles","PUBLIC — everyone has it"]},
+{h:"Time Travel + Fail-safe",items:["Permanent: TT 1 d (Std) / 90 d (Ent+); Fail-safe 7 d","Transient: TT 1 d max; NO Fail-safe","Temporary: TT 1 d max, session-bound; NO Fail-safe","External: no TT, no Fail-safe"]},
+{h:"Three caches",items:["Result: Cloud Services, 24 h + reuse-extend, 31-day cap","Metadata: persistent — COUNT(*), MIN/MAX","Warehouse: local SSD — dropped on suspend/resize","Order: Result → Metadata → Warehouse → Remote"]},
+{h:"Loading",items:["COPY INTO — manual/batch","Snowpipe — file-based, ~1 min, serverless","Snowpipe Streaming — row-level, sub-second, SDK","Streams + Tasks — CDC + scheduling","Dynamic Tables — declarative, TARGET_LAG"]},
+{h:"Optimization picks",items:["Poor pruning on big table → Clustering key","Point lookup / substring → Search Optimization","Repeated aggregation → Materialized View","Occasional huge query → Query Acceleration","Remote spilling → Scale UP","Queueing → Scale OUT"]},
+{h:"Defaults to memorize",items:["AUTO_SUSPEND 600 s · AUTO_RESUME ON","Retention default 1 day","Fail-safe 7 days fixed, permanent only","Billing per-second, 60-s minimum on resume","Result cache 24 h, 31-day hard limit","Micro-partitions 50–500 MB uncompressed"]},
+{h:"Trap pairs",items:["Mask = values · Row access = rows","Tag = manual · Classification = automatic","Scale UP = bigger · OUT = more clusters","Snowpipe = files ~1 min · Streaming = rows sub-second","Stream = CDC tracker · Task = scheduler"]}
+];
+
+
+/* =============== FULL STUDY MATERIAL =============== */
+const MATERIAL = {
+1: `
+<h3>1.1 Why the architecture matters</h3>
+<p>Snowflake separates storage, compute, and services into three independent layers. This is the single most important concept in the platform — it is why you can resize a warehouse without touching data, why multiple teams can query the same table with zero contention, and why you pay only for what you use.</p>
+<h3>1.2 The Cloud Services layer</h3>
+<p>The "brain." It runs as a collection of services across the cloud provider's infrastructure — it is NOT a warehouse you control. Responsibilities:</p>
+<ul><li>Authentication and access control (RBAC enforcement)</li><li>Infrastructure management (provisioning warehouses, allocating storage)</li><li>Metadata management (table definitions, micro-partition min/max stats)</li><li>Query parsing and optimization (building the execution plan)</li><li>Transaction management (ACID)</li><li>Security (key rotation, encryption)</li></ul>
+<h3>1.3 The Compute layer (virtual warehouses)</h3>
+<p>Warehouses are MPP clusters that execute queries. Independent of each other and of storage — multiple warehouses can point at the same data, sized differently, with zero contention. Billed per-second after a 60-second minimum on resume; suspended warehouses cost nothing.</p>
+<table class="t"><tr><th>Size</th><th>Credits/hr</th><th>Typical use</th></tr>
+<tr><td>XS</td><td>1</td><td>Dev, light queries</td></tr>
+<tr><td>S</td><td>2</td><td>Small BI</td></tr>
+<tr><td>M</td><td>4</td><td>Standard BI / ETL</td></tr>
+<tr><td>L</td><td>8</td><td>Heavy ETL / concurrency</td></tr>
+<tr><td>XL</td><td>16</td><td>Large transforms</td></tr>
+<tr><td>2XL</td><td>32</td><td>Very large queries</td></tr>
+<tr><td>3XL+</td><td>64+</td><td>Exceptional workloads (…6XL = 512)</td></tr></table>
+<h3>1.4 The Storage layer</h3>
+<ul><li>All data lives in cloud object storage (S3 / Azure Blob / GCS) but you never touch it directly — Snowflake controls layout, format and access.</li><li>Columnar micro-partitions of 50–500 MB uncompressed each.</li><li>Automatically compressed — best algorithm chosen per column.</li><li>Always encrypted at rest with AES-256.</li><li>Immutable — DML never updates a micro-partition; it writes new ones.</li><li>Billed per TB per month on average daily usage.</li></ul>
+<h3>1.5 Editions</h3>
+<p><b>Standard:</b> complete SQL warehouse, always-on encryption, dedicated warehouses, Time Travel up to 1 day, Fail-safe 7 days, federated auth/SSO, premium support.</p>
+<p><b>Enterprise (Standard +):</b> Time Travel up to 90 days, multi-cluster warehouses, materialized views, search optimization, dynamic data masking, column-level security and row-access policies, object tagging and tag-based masking, annual key rotation.</p>
+<p><b>Business Critical (Enterprise +):</b> HIPAA / HITRUST / PCI DSS, Tri-Secret Secure (customer-managed keys via cloud KMS), PrivateLink / Private Link / Private Service Connect, database failover and failback.</p>
+<p><b>VPS (Business Critical +):</b> completely separate Snowflake environment (own metadata store and compute pool). Highest isolation, highest cost.</p>`,
+
+2: `
+<h3>2.1 The container pyramid</h3>
+<pre>Organization
+  └─ Account(s)
+      ├─ Users, Roles, Warehouses, Resource Monitors
+      ├─ Network Policies, Shares, Integrations
+      └─ Database(s)
+          └─ Schema(s)
+              ├─ Tables, Views, Stages
+              ├─ File Formats, Sequences
+              ├─ Procs, UDFs, Pipes, Streams, Tasks
+              └─ Dynamic Tables, ML Models, Apps</pre>
+<h3>2.2 Organization level</h3>
+<ul><li><b>Organization:</b> top-level container created at signup; holds all your accounts.</li><li><b>Accounts:</b> each fully independent — own URL, users, data, billing.</li><li><b>Organization listings:</b> Marketplace-style listings shared across accounts in the org.</li></ul>
+<h3>2.3 Account level</h3>
+<ul><li><b>Users</b> (CREATE USER) and <b>Roles</b> (system + custom account roles)</li><li><b>Warehouses</b>, <b>Resource monitors</b>, <b>Network policies</b></li><li><b>Shares</b> and <b>Integrations</b> (storage, API, security/OAuth, notification)</li><li><b>Databases</b> — containers for schemas</li></ul>
+<h3>2.4 Database level</h3>
+<ul><li><b>Schemas</b> — with two built-ins: INFORMATION_SCHEMA (per-database, real-time, ~7-day history) and PUBLIC (default schema in every new database).</li><li><b>Database roles</b> — permissions scoped to one database; useful for sharing without exposing your account role hierarchy.</li></ul>
+<h3>2.5 Schema level</h3>
+<p>Where day-to-day objects live: tables (permanent, temporary, transient, external, Iceberg, dynamic, event), views (standard, materialized, secure), stages, file formats, sequences (monotonic, gaps possible), stored procedures (SQL, Python, Java, Scala, JavaScript), UDFs/UDTFs, pipes, streams, tasks, dynamic tables, ML models, applications.</p>
+<h3>2.6 INFORMATION_SCHEMA vs ACCOUNT_USAGE</h3>
+<table class="t"><tr><th></th><th>INFORMATION_SCHEMA</th><th>ACCOUNT_USAGE</th></tr>
+<tr><td>Scope</td><td>Per-database</td><td>Account-wide</td></tr>
+<tr><td>Latency</td><td>Real-time</td><td>~45 min–3 hr</td></tr>
+<tr><td>History</td><td>~7 days</td><td>~1 year</td></tr>
+<tr><td>Dropped objects</td><td>Excluded</td><td>Included</td></tr>
+<tr><td>Location</td><td>Each database</td><td>SNOWFLAKE.ACCOUNT_USAGE</td></tr></table>`,
+
+3: `
+<h3>3.1 Scaling UP vs scaling OUT</h3>
+<p>The single most-tested warehouse concept.</p>
+<p><b>Scaling UP (or down)</b> — change the size:</p>
+<pre>ALTER WAREHOUSE my_wh SET WAREHOUSE_SIZE = 'LARGE';</pre>
+<ul><li>Solves slow individual queries (more memory/CPU per query).</li><li>Symptoms: query slow even when alone; query spilling to remote disk.</li></ul>
+<p><b>Scaling OUT (or in)</b> — add clusters (multi-cluster, Enterprise+):</p>
+<pre>ALTER WAREHOUSE my_wh SET MIN_CLUSTER_COUNT = 1, MAX_CLUSTER_COUNT = 4;</pre>
+<ul><li>Solves many simultaneous users queueing.</li><li>Each cluster is a full warehouse — 4 active clusters of L = 4× the credits.</li></ul>
+<h3>3.2 Scaling policies</h3>
+<ul><li><b>STANDARD (default):</b> adds clusters aggressively to minimize queueing; conservative removing them. Performance over cost.</li><li><b>ECONOMY:</b> waits longer before adding (allows queueing), removes faster. Cost over latency.</li></ul>
+<h3>3.3 Auto-suspend & auto-resume</h3>
+<ul><li><b>AUTO_SUSPEND:</b> default 600 s. Minimum 60 s in the UI (lower via SQL, not recommended). Suspend purges the warehouse cache.</li><li><b>AUTO_RESUME:</b> default ON — resumes on query submission in a couple of seconds.</li></ul>
+<h3>3.4 Snowpark-Optimized warehouses</h3>
+<ul><li>16× more memory per node, 10× more local cache than Standard.</li><li>~1.5× credits at the same size.</li><li>For ML training, large-state Python UDFs, big DataFrame work.</li></ul>
+<h3>3.5 Best practices</h3>
+<ul><li>Separate warehouses by workload (ETL / BI / ad-hoc) — don't share.</li><li>Size up before scaling out.</li><li>ECONOMY when cost beats latency.</li><li>Match size to the query, not the data volume — a 10 TB table can fly on Small with good pruning.</li><li>Suspend dev/test warehouses aggressively (60 s).</li></ul>`,
+
+4: `
+<h3>4.1 Micro-partitions deep dive</h3>
+<ul><li>50–500 MB uncompressed each, smaller compressed; columnar within each partition.</li><li>Immutable — UPDATE/DELETE writes new partitions and marks old ones obsolete (kept for Time Travel).</li><li>Created automatically as you load.</li></ul>
+<p><b>Metadata kept per partition</b> (drives pruning): min and max per column, distinct count, null count, and column file offsets enabling columnar reads.</p>
+<h3>4.2 Pruning</h3>
+<pre>SELECT * FROM orders
+WHERE order_date = '2025-01-15';</pre>
+<p>Snowflake checks each partition's min/max of order_date and skips any partition whose range cannot match. With well-clustered data a date filter might scan 1% of partitions — a 100× speedup. Pruning fails when: data is clustered on a different column, you filter on a function of a column (DATE(ts_col)), the column is highly variable (UUID/hash), or the table is too small to matter.</p>
+<h3>4.3 Clustering keys</h3>
+<pre>ALTER TABLE orders CLUSTER BY (order_date);</pre>
+<p>For very large tables (typically &gt; 1 TB) with poor pruning. Snowflake reorganizes partitions over time; reclustering is serverless and billed separately from your warehouses.</p>
+<h3>4.4 Table types</h3>
+<ul>
+<li><b>PERMANENT (default):</b> full Time Travel (1 d default, up to 90 d Ent+), 7-day Fail-safe. Production data.</li>
+<li><b>TEMPORARY:</b> session-scoped, invisible to other sessions, auto-dropped at session end. Max 1-day TT (session-bound), NO Fail-safe.</li>
+<li><b>TRANSIENT:</b> persists until dropped, max 1-day TT, NO Fail-safe — cost saver for rebuildable data.</li>
+<li><b>EXTERNAL:</b> read-only metadata pointer to files in an external stage; data stays in S3/Blob/GCS; slower — best for cold or shared data.</li>
+<li><b>ICEBERG:</b> Apache Iceberg format; Snowflake-managed or externally managed catalog; read/write; interop with Spark, Flink etc.</li>
+<li><b>DYNAMIC:</b> declarative pipeline — SELECT + TARGET_LAG, Snowflake handles incremental refresh; charged for refresh compute.</li></ul>
+<table class="t"><tr><th>Type</th><th>Max TT</th><th>Fail-safe</th><th>Lifetime</th></tr>
+<tr><td>Permanent</td><td>1 d Std / 90 d Ent+</td><td>7 days</td><td>Until dropped</td></tr>
+<tr><td>Transient</td><td>1 day</td><td>None</td><td>Until dropped</td></tr>
+<tr><td>Temporary</td><td>1 day (session)</td><td>None</td><td>Session</td></tr>
+<tr><td>External</td><td>n/a</td><td>None</td><td>Until dropped</td></tr></table>`,
+
+5: `
+<h3>5.1 View types</h3>
+<p><b>Standard:</b> logical query re-run on each call; no storage or maintenance cost; the optimizer can sometimes see through it. Best for abstractions and security boundaries.</p>
+<p><b>Materialized (Ent+):</b> pre-computed result physically stored and auto-maintained serverlessly. Storage + maintenance compute. Limitations: single base table (classic MVs), no window functions, no UDFs, restricted aggregates. Best for frequently-queried aggregations on slowly-changing data.</p>
+<p><b>Secure:</b> hides definition and execution plan from non-owners; prevents inference attacks via optimizer behavior; slightly slower; REQUIRED for Secure Data Sharing.</p>
+<h3>5.2–5.3 Notebooks & Streamlit</h3>
+<ul><li><b>Notebooks:</b> Snowsight-native Python + SQL in one document; warehouse or container runtime.</li><li><b>Streamlit in Snowflake:</b> interactive Python data apps that run entirely inside Snowflake — app, compute and data never leave your account; charged to a warehouse.</li></ul>
+<h3>5.4 Snowpark</h3>
+<ul><li><b>DataFrame API</b> (Python/Java/Scala) compiling to SQL on a warehouse.</li><li><b>UDFs</b> and <b>stored procedures</b> (procs may have side effects).</li><li><b>Container Services:</b> run any containerized app inside Snowflake (custom ML serving, GPU workloads).</li></ul>
+<h3>5.5 Cortex</h3>
+<p><b>AI SQL functions</b> — LLM-powered, no model deployment:</p>
+<pre>SELECT SNOWFLAKE.CORTEX.SENTIMENT(review) FROM reviews;
+SELECT SNOWFLAKE.CORTEX.SUMMARIZE(body) FROM articles;
+SELECT SNOWFLAKE.CORTEX.TRANSLATE(t,'en','es') FROM msgs;
+SELECT SNOWFLAKE.CORTEX.COMPLETE('mistral-large', prompt);</pre>
+<p>Functions: COMPLETE, SUMMARIZE, TRANSLATE, SENTIMENT, EXTRACT_ANSWER, CLASSIFY_TEXT, EMBED_TEXT_768 / 1024.</p>
+<p><b>Cortex Search:</b> fully-managed hybrid retrieval (vector + lexical) over unstructured text — better relevance than vector-only RAG; typical use is chatbots over internal docs.</p>
+<p><b>Cortex Analyst:</b> natural language → SQL over structured tables via a semantic model (YAML of tables, columns, metrics). Self-service BI.</p>
+<p><b>Snowflake ML:</b> SQL/Snowpark functions for forecasting, anomaly detection, classification, top-insights + a model registry.</p>`,
+
+6: `
+<h3>6.1 Snowsight</h3>
+<p>The modern web UI: worksheets, dashboards, query history and Query Profile, notebooks, Streamlit builder, Cortex chat, admin tools.</p>
+<h3>6.2 Snowflake CLI (snow)</h3>
+<pre>snow connection add
+snow sql -q "SELECT CURRENT_VERSION()"
+snow streamlit deploy</pre>
+<p>Modern Python-based CLI replacing SnowSQL for new workflows — connections, SQL, deployment of Native Apps, Streamlit and Snowpark.</p>
+<h3>6.3 SnowSQL & Classic Console</h3>
+<p>Older interactive CLI, still supported for scripted SQL; new projects should prefer snow. Classic Console is being phased out — Snowsight is the standard.</p>
+<h3>6.4 IDE integrations</h3>
+<ul><li><b>VS Code:</b> official extension — worksheets, autocomplete, Streamlit, Snowpark Python.</li><li><b>JetBrains:</b> plugin for IntelliJ / PyCharm.</li><li><b>dbt:</b> first-class Snowflake support (not a Snowflake tool, commonly used alongside).</li></ul>
+<h3>6.5 Drivers & connectors</h3>
+<p><b>Drivers:</b> JDBC, ODBC, .NET, Go, Node.js, PHP, Python (the Python Connector is also the driver).</p>
+<p><b>Connectors:</b> Kafka (Snowpipe or Snowpipe Streaming mode), Spark (bidirectional), Hive Metastore. BI tools — Tableau, Power BI, Looker, ThoughtSpot, Qlik — connect natively via ODBC/JDBC.</p>`,
+
+7: `
+<h3>7.1 The mental model</h3>
+<p>Users log in. Privileges (SELECT, INSERT, USAGE, OWNERSHIP…) are granted to roles. Roles are granted to users or to other roles, forming a hierarchy. A user acts under ONE active primary role at a time (plus optional secondary roles).</p>
+<h3>7.2 System role hierarchy — memorize</h3>
+<pre>ORGADMIN  (org level)
+
+ACCOUNTADMIN
+   ├── SECURITYADMIN
+   │      └── USERADMIN
+   └── SYSADMIN
+          └── (your custom roles)
+
+PUBLIC (everyone, implicitly)</pre>
+<ul>
+<li><b>ORGADMIN:</b> creates/manages accounts; no automatic account-level privileges.</li>
+<li><b>ACCOUNTADMIN:</b> inherits SECURITYADMIN + SYSADMIN; use sparingly (2–3 people).</li>
+<li><b>SECURITYADMIN:</b> MANAGE GRANTS — can modify or revoke ANY grant, even ones it didn't create; inherits USERADMIN.</li>
+<li><b>USERADMIN:</b> creates users and roles only; cannot grant on objects it doesn't own.</li>
+<li><b>SYSADMIN:</b> creates and owns warehouses, databases, objects; recommended PARENT for all custom roles.</li>
+<li><b>PUBLIC:</b> implicit for every user — grants to it reach everyone; be careful.</li></ul>
+<h3>7.3 DAC</h3>
+<p>Snowflake combines RBAC with Discretionary Access Control: the OWNER of an object can grant access to it at their discretion — that owner discretion is what "DAC" means on the exam.</p>
+<h3>7.4 Custom roles best practice</h3>
+<pre>SYSADMIN
+   ├── DATA_ENGINEER
+   ├── ANALYST
+   │      ├── ANALYST_SALES
+   │      └── ANALYST_FINANCE
+   └── DATA_SCIENTIST</pre>
+<p>Chain custom roles to SYSADMIN so it retains visibility of all objects created under them.</p>
+<h3>7.5 Secondary roles & 7.6 database roles</h3>
+<pre>USE SECONDARY ROLES ALL;</pre>
+<p>Secondary roles combine privileges from multiple roles in one session — handy when a query joins tables owned by different roles. Database roles scope permissions to a single database; especially useful with Secure Data Sharing.</p>
+<div class="callout"><div class="ct">Addendum — verified nuance</div><p>ACCOUNTADMIN is NOT a true superuser: it only sees objects reachable through its hierarchy. If a custom role is created OUTSIDE the SYSADMIN tree, SYSADMIN/ACCOUNTADMIN cannot see its objects without going through SECURITYADMIN / MANAGE GRANTS.</p></div>`,
+
+8: `
+<h3>8.1 Authentication methods</h3>
+<ul>
+<li><b>Password + MFA:</b> MFA via Duo built in — now REQUIRED for human users authenticating with passwords.</li>
+<li><b>Federated / SSO:</b> SAML 2.0 with Okta, Azure AD, ADFS, Ping, OneLogin — Snowflake trusts the IdP assertion.</li>
+<li><b>OAuth:</b> Snowflake OAuth (Snowflake is the auth server) or External OAuth (Okta / Azure AD etc.). Best for applications.</li>
+<li><b>Key-pair:</b> for service accounts —
+<pre>-- openssl genrsa -out key.pem 2048
+-- openssl rsa -in key.pem -pubout -out pub.pem
+ALTER USER svc SET RSA_PUBLIC_KEY='MIIBI...';</pre>
+Private key stays with the app; only the public key is registered. No stored password.</li>
+<li><b>Programmatic Access Tokens (PAT):</b> time-limited tokens for automation — newer password alternative.</li></ul>
+<h3>8.2 Network policies</h3>
+<pre>CREATE NETWORK POLICY office_only
+  ALLOWED_IP_LIST = ('203.0.113.0/24')
+  BLOCKED_IP_LIST = ('203.0.113.99');
+ALTER ACCOUNT SET NETWORK_POLICY = office_only;
+ALTER USER jdoe SET NETWORK_POLICY = office_only;</pre>
+<p>Account-level applies to all users; a user-level policy OVERRIDES it for that user.</p>
+<h3>8.3 Private connectivity</h3>
+<p>AWS PrivateLink, Azure Private Link, GCP Private Service Connect — private endpoints in your VPC/VNet. All require Business Critical or higher.</p>
+<h3>8.4 Account identifiers</h3>
+<ul><li><b>Modern (preferred):</b> orgname-accountname, e.g. acmecorp-prod — portable across regions/clouds. URLs: https://orgname-accountname.snowflakecomputing.com</li><li><b>Legacy:</b> locator.region.cloud, e.g. xy12345.us-east-1.aws — still works for backward compatibility.</li></ul>`,
+
+9: `
+<h3>9.1 Dynamic Data Masking</h3>
+<pre>CREATE MASKING POLICY mask_email
+AS (val STRING) RETURNS STRING ->
+  CASE WHEN CURRENT_ROLE() IN
+    ('COMPLIANCE_ADMIN','ACCOUNTADMIN') THEN val
+  ELSE REGEXP_REPLACE(val,'.+@','***@') END;
+
+ALTER TABLE customers MODIFY COLUMN email
+  SET MASKING POLICY mask_email;</pre>
+<p>Decided at query time based on role/context — compliance sees real values, everyone else sees ***@domain.com.</p>
+<h3>9.2 Row Access Policies</h3>
+<pre>CREATE ROW ACCESS POLICY rap_region
+AS (region STRING) RETURNS BOOLEAN ->
+  CURRENT_ROLE()='ACCOUNTADMIN'
+  OR EXISTS (SELECT 1 FROM region_access_map
+     WHERE role_name=CURRENT_ROLE()
+       AND allowed_region=region);
+ALTER TABLE orders ADD ROW ACCESS POLICY rap_region ON (region);</pre>
+<h3>9.3–9.4 Tags & tag-based masking</h3>
+<pre>CREATE TAG sensitivity;
+ALTER TABLE customers MODIFY COLUMN ssn
+  SET TAG sensitivity='PII_HIGH';
+ALTER TAG sensitivity SET MASKING POLICY mask_pii;</pre>
+<p>Tags drive cost tracking, discovery, and centralized masking — tag a new column and it is masked automatically, no per-column ALTER.</p>
+<h3>9.5 Data Classification</h3>
+<pre>CALL SYSTEM$CLASSIFY('db.public.customers',
+  {'auto_tag': true});</pre>
+<p>AUTOMATED detection using semantic categories (EMAIL, PHONE, NAME, SSN…) and privacy categories (IDENTIFIER, QUASI_IDENTIFIER, SENSITIVE). Classification detects; tagging labels — together: classify finds sensitive columns, then auto-tags them.</p>
+<h3>9.6 Aggregation & projection policies</h3>
+<ul><li><b>Aggregation:</b> queries must return aggregates with a minimum group size (k-anonymity).</li><li><b>Projection:</b> a column may be usable in WHERE/JOIN but cannot be SELECTed directly.</li></ul>
+<h3>9.7–9.9 Trust Center & encryption</h3>
+<p><b>Trust Center:</b> Snowsight scanners — users without MFA, ACCOUNTADMIN membership, missing network policies, public shares — with remediation guidance. <b>Encryption:</b> AES-256 at rest by default, Snowflake-managed keys; Tri-Secret Secure (BC+) combines your KMS key with Snowflake's — neither alone can decrypt. Keys rotate automatically (annually on Ent+).</p>`,
+
+10: `
+<h3>10.1 Resource monitors</h3>
+<pre>CREATE RESOURCE MONITOR finance_rm
+  WITH CREDIT_QUOTA = 1000
+  FREQUENCY = MONTHLY
+  START_TIMESTAMP = IMMEDIATELY
+  TRIGGERS
+    ON 75 PERCENT DO NOTIFY
+    ON 100 PERCENT DO SUSPEND
+    ON 110 PERCENT DO SUSPEND_IMMEDIATE;
+ALTER WAREHOUSE finance_wh
+  SET RESOURCE_MONITOR = finance_rm;</pre>
+<ul><li><b>NOTIFY:</b> notifies ACCOUNTADMINs (and configured users).</li><li><b>SUSPEND:</b> in-flight queries finish, then suspend.</li><li><b>SUSPEND_IMMEDIATE:</b> kills running queries instantly.</li></ul>
+<p>Key facts: monitors are FREE; only ACCOUNTADMIN creates them by default; scope = warehouse(s) or whole account; only ACCOUNT-level monitors cover serverless (Snowpipe, MV maintenance, reclustering, replication); FREQUENCY = MONTHLY default, or DAILY / WEEKLY / YEARLY / NEVER.</p>
+<h3>10.2 Credit math</h3>
+<pre>M (4 cr/hr) × 15 min  = 1 credit
+L (8 cr/hr) × 30 min  = 4 credits
+XL (16 cr/hr) × 70 min ≈ 18.7 credits</pre>
+<p>Dollar cost per credit varies by edition/region — roughly $2 Standard, $3 Enterprise, $4 Business Critical (illustrative).</p>
+<h3>10.3 ACCOUNT_USAGE views to know</h3>
+<table class="t"><tr><th>View</th><th>Purpose</th></tr>
+<tr><td>QUERY_HISTORY</td><td>Every query — text, user, warehouse, duration</td></tr>
+<tr><td>QUERY_ATTRIBUTION_HISTORY</td><td>Credits per query (chargeback)</td></tr>
+<tr><td>WAREHOUSE_METERING_HISTORY</td><td>Per-warehouse credits over time</td></tr>
+<tr><td>METERING_DAILY_HISTORY</td><td>Daily credits by service</td></tr>
+<tr><td>STORAGE_USAGE</td><td>Daily storage incl. Fail-safe + stages</td></tr>
+<tr><td>LOGIN_HISTORY</td><td>Every login attempt</td></tr>
+<tr><td>ACCESS_HISTORY</td><td>Who accessed which columns/rows</td></tr>
+<tr><td>COPY_HISTORY</td><td>Every COPY INTO load incl. Snowpipe</td></tr>
+<tr><td>PIPE_USAGE_HISTORY</td><td>Snowpipe credits</td></tr></table>`,
+11: `
+<h3>11.1 Internal stages</h3>
+<ul>
+<li><b>User stage @~</b> — one per user, automatic, private:
+<pre>PUT file:///local/data.csv @~/staging/;
+LIST @~;</pre></li>
+<li><b>Table stage @%tablename</b> — one per table, automatic; accessible to anyone with table privileges; CANNOT feed COPY INTO a different table.</li>
+<li><b>Named stage</b> — explicit schema object, internal or external, most flexible — use for production:
+<pre>CREATE STAGE my_stage FILE_FORMAT=(TYPE=CSV);</pre></li></ul>
+<h3>11.2 External stages & storage integrations</h3>
+<pre>CREATE STORAGE INTEGRATION s3_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = 'S3'  ENABLED = TRUE
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::123:role/sf'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://my-bucket/data/');
+
+CREATE STAGE my_s3_stage
+  STORAGE_INTEGRATION = s3_int
+  URL = 's3://my-bucket/data/'
+  FILE_FORMAT = my_csv_format;</pre>
+<p>The integration trusts a cloud IAM role — users never see credentials.</p>
+<h3>11.3 File formats</h3>
+<pre>CREATE FILE FORMAT my_csv_format
+  TYPE = CSV  FIELD_DELIMITER = ','
+  SKIP_HEADER = 1
+  FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+  NULL_IF = ('NULL','null','');</pre>
+<p>Types: CSV, JSON, AVRO, ORC, PARQUET, XML.</p>
+<h3>11.4 COPY INTO table</h3>
+<pre>COPY INTO my_table
+  FROM @my_stage/path/
+  FILE_FORMAT=(FORMAT_NAME=my_csv_format)
+  PATTERN='.*\\.csv'
+  ON_ERROR='CONTINUE'  PURGE=TRUE;</pre>
+<ul><li><b>ON_ERROR:</b> ABORT_STATEMENT (default), CONTINUE (skip bad rows), SKIP_FILE, SKIP_FILE_n% .</li><li><b>PURGE:</b> delete staged files after successful load. <b>FORCE:</b> reload already-loaded files.</li><li><b>VALIDATION_MODE:</b> RETURN_n_ROWS / RETURN_ERRORS / RETURN_ALL_ERRORS — validate without loading.</li></ul>
+<h3>11.5 Directory tables</h3>
+<pre>CREATE STAGE my_stage
+  DIRECTORY=(ENABLE=TRUE) FILE_FORMAT=my_csv;
+SELECT * FROM DIRECTORY(@my_stage);</pre>
+<p>Queryable file catalog — path, size, last modified, MD5. AUTO_REFRESH=TRUE keeps it updated via cloud events.</p>
+<h3>11.6 Unloading</h3>
+<pre>COPY INTO @my_stage/export/
+  FROM (SELECT * FROM orders WHERE region='EU')
+  FILE_FORMAT=(TYPE=PARQUET)
+  HEADER=TRUE  MAX_FILE_SIZE=268435456;</pre>
+<p>SINGLE=TRUE for one file; MAX_FILE_SIZE up to 5 GB (default ~16 MB); HEADER for CSV. Unload formats: CSV, JSON, Parquet only.</p>
+<h3>11.7 Load performance</h3>
+<ul><li>Split large files into 100–250 MB compressed chunks for parallelism.</li><li>Parallel file slots scale with size: XS ≈ 8 files, S = 16, M = 32…</li><li>Prefer formats with predicate pushdown (Parquet); always use a storage integration.</li></ul>`,
+
+12: `
+<h3>12.1 Snowpipe (classic)</h3>
+<pre>CREATE PIPE my_pipe AUTO_INGEST=TRUE AS
+COPY INTO my_table
+FROM @my_s3_stage/incoming/
+FILE_FORMAT = my_csv_format;</pre>
+<p><b>Triggers:</b> cloud event notifications (S3→SQS, Blob→Event Grid, GCS→Pub/Sub) — new file → notification → load, ~1 min latency; or the REST insertFiles API for explicit control.</p>
+<p><b>Billing:</b> small per-file overhead + per-second serverless compute → ACCOUNT_USAGE.PIPE_USAGE_HISTORY.</p>
+<p><b>Monitoring:</b></p>
+<pre>SELECT SYSTEM$PIPE_STATUS('my_pipe');
+SELECT * FROM TABLE(
+  INFORMATION_SCHEMA.COPY_HISTORY(
+    TABLE_NAME=>'my_table',
+    START_TIME=>DATEADD(hour,-1,CURRENT_TIMESTAMP())));</pre>
+<h3>12.2 Snowpipe Streaming</h3>
+<p>No files — the app sends rows directly via the Streaming SDK. Row-level, sub-second latency, no per-file overhead, generally cheaper at high throughput.</p>
+<div class="callout"><div class="ct">Addendum — two Streaming architectures</div>
+<table class="t"><tr><th></th><th>Classic</th><th>High-Performance</th></tr>
+<tr><td>SDKs</td><td>Java only</td><td>Java + Python (+ REST)</td></tr>
+<tr><td>Target</td><td>Table directly</td><td>PIPE object → table</td></tr>
+<tr><td>Validation</td><td>Client-side</td><td>Server-side (on pipe)</td></tr>
+<tr><td>Transformations</td><td>No</td><td>Yes — COPY INTO syntax in the pipe</td></tr>
+<tr><td>Billing</td><td>Serverless credits</td><td>Flat rate per uncompressed GB</td></tr>
+<tr><td>Status</td><td>Deprecation planned</td><td>GA, recommended</td></tr></table>
+<p>High-Performance extras: clustering keys / DEFAULT / AUTOINCREMENT supported on targets, up to 10 GB/s, ~5 s data freshness, and a default pipe auto-created per target table so you can stream without manual CREATE PIPE.</p></div>
+<h3>12.3 Kafka Connector & choosing a tool</h3>
+<table class="t"><tr><th>Tool</th><th>Trigger</th><th>Latency</th><th>Use when</th></tr>
+<tr><td>COPY INTO</td><td>Manual/scheduled</td><td>On demand</td><td>Batch loads</td></tr>
+<tr><td>Snowpipe</td><td>Cloud event / REST</td><td>~1 min</td><td>File-based continuous</td></tr>
+<tr><td>Streaming</td><td>SDK row inserts</td><td>Sub-second</td><td>Row-level streaming</td></tr></table>
+<p>Kafka Connector modes: Snowpipe (files → stage, simpler, higher latency) or Snowpipe Streaming (direct rows, lower latency, cheaper at scale; newer versions use the High-Performance architecture).</p>`,
+
+13: `
+<h3>13.1 Streams (CDC)</h3>
+<pre>CREATE STREAM orders_stream ON TABLE orders;
+SELECT * FROM orders_stream;      -- changes since last consume
+INSERT INTO orders_archive
+  SELECT * FROM orders_stream;    -- offset advances on COMMIT</pre>
+<ul><li><b>STANDARD:</b> INSERT/UPDATE/DELETE with METADATA$ACTION, METADATA$ISUPDATE, METADATA$ROW_ID.</li><li><b>APPEND_ONLY:</b> inserts only — faster, less storage.</li><li><b>INSERT_ONLY:</b> external tables — tracks file additions.</li></ul>
+<p><b>Staleness:</b> a stream is bound to the source's DATA_RETENTION_TIME_IN_DAYS; unconsumed past that window it goes stale and must be recreated. Extend via source retention or MAX_DATA_EXTENSION_TIME_IN_DAYS.</p>
+<h3>13.2 Tasks</h3>
+<pre>CREATE TASK my_task
+  WAREHOUSE = etl_wh
+  SCHEDULE = 'USING CRON 0 * * * * UTC'
+AS INSERT INTO orders_archive
+   SELECT * FROM orders_stream;
+ALTER TASK my_task RESUME;</pre>
+<ul><li>Schedules: CRON with timezone, or interval (SCHEDULE='5 MINUTE').</li><li><b>DAGs:</b> root task on a schedule; children declared AFTER parent, run on parent success.</li><li><b>Serverless:</b> omit WAREHOUSE and set USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE — Snowflake supplies scaling compute.</li></ul>
+<h3>13.3 Dynamic Tables</h3>
+<pre>CREATE DYNAMIC TABLE orders_daily
+  TARGET_LAG = '5 minutes'
+  WAREHOUSE = etl_wh
+AS SELECT region, COUNT(*), SUM(amount)
+   FROM orders GROUP BY region;</pre>
+<p>Snowflake detects source changes, computes incremental deltas where possible (full refresh fallback for unsupported SQL), and schedules refreshes to meet TARGET_LAG.</p>
+<p><b>Choosing:</b> Dynamic Tables = declarative, joins supported, Snowflake-managed. Streams+Tasks = imperative, maximum flexibility. MVs = auto-maintained but restricted SQL (single base table).</p>`,
+
+14: `
+<h3>14.1–14.2 Drivers & connectors</h3>
+<p>Drivers: JDBC, ODBC, .NET, Go, Node.js, PHP, Python. Connectors: Kafka (two modes), Spark (bidirectional), Hive Metastore.</p>
+<h3>14.3 Integration objects</h3>
+<p><b>Storage integration</b> — cloud storage without exposed credentials (see Day 11).</p>
+<p><b>API integration</b> — lets External Functions call HTTPS endpoints:</p>
+<pre>CREATE API INTEGRATION my_api
+  API_PROVIDER = aws_api_gateway
+  API_AWS_ROLE_ARN='arn:aws:iam::…:role/sf_api'
+  API_ALLOWED_PREFIXES=('https://abc.execute-api.us-east-1.amazonaws.com/prod/');</pre>
+<p><b>Notification integration</b> — Snowflake → SNS / Event Grid / Pub/Sub or email (alerts, Snowpipe error notifications).</p>
+<p><b>Security integration</b> — OAuth, SAML, SCIM configuration.</p>
+<p><b>Git integration:</b></p>
+<pre>CREATE GIT REPOSITORY my_repo
+  API_INTEGRATION = github_api
+  ORIGIN='https://github.com/myorg/snowflake-objects';</pre>
+<p>Mounts a repo as a stage — reference configs, Streamlit apps, Native App YAML directly; enables CI/CD.</p>
+<h3>14.4 External Functions</h3>
+<pre>CREATE EXTERNAL FUNCTION my_lambda(x VARIANT)
+  RETURNS VARIANT
+  API_INTEGRATION = my_api
+  AS 'https://abc.execute-api…/my-lambda';</pre>
+<p>Calls code outside Snowflake (Lambda, Azure Functions). Slower than Snowpark UDFs due to the HTTPS round trip — useful for third-party services you can't bring inside.</p>`,
+
+16: `
+<h3>16.1 The Query Profile</h3>
+<p>Snowsight → Query History → click a query → Query Profile. Shows the plan as a graph with per-operator stats.</p>
+<h3>16.2 What to look for</h3>
+<ul>
+<li><b>Partitions scanned vs total:</b> pruning ratio. Scanning most partitions on a filtered query = pruning failed — check for functions on the filter column, wrong clustering, or consider Search Optimization for point lookups.</li>
+<li><b>Bytes scanned:</b> baseline — 100 GB scanned to return 100 rows means something is wrong.</li>
+<li><b>Bytes spilled to local storage:</b> ran out of memory, used warehouse SSD. Tolerable; scale up.</li>
+<li><b>Bytes spilled to remote storage:</b> exhausted SSD too, now using object storage — 10–100× slowdown. Almost always scale up significantly.</li>
+<li><b>Exploding joins:</b> operator outputs far more rows than input — missing/wrong join keys, accidental cross-product. Look for huge intermediates.</li>
+<li><b>Queueing:</b> waiting for capacity. High queueing = saturated → scale OUT.</li></ul>
+<h3>16.3 Performance views</h3>
+<ul><li><b>QUERY_HISTORY:</b> execution_time, bytes_spilled_*, partitions_scanned, percentage_scanned_from_cache.</li><li><b>QUERY_ATTRIBUTION_HISTORY:</b> credits per query — find the expensive ones.</li><li><b>ACCESS_HISTORY:</b> columns/rows accessed — governance + workload insight.</li></ul>
+<h3>16.4 Workload grouping</h3>
+<ul><li>ETL warehouse: large, nightly, auto-suspend ~5 min.</li><li>BI warehouse: medium, multi-cluster, ~10 min.</li><li>Ad-hoc: small, manual. Loading: small, COPY INTO only.</li><li>Never mix ETL with BI dashboards — different latency and concurrency needs.</li></ul>`,
+
+17: `
+<h3>17.1 Result Cache (Cloud Services)</h3>
+<ul><li>Query results kept up to 24 hours; each reuse extends another 24 h, up to a 31-day hard limit.</li><li>Shared across the whole account (subject to privileges); returns in milliseconds, no warehouse needed.</li></ul>
+<p><b>Invalidated by:</b> any DML on source tables; micro-partitions modified by reclustering; non-deterministic functions (CURRENT_TIMESTAMP, CURRENT_DATE, RANDOM, UUID_STRING); session variables affecting the result; querying role lacking visibility on a referenced object.</p>
+<div class="callout"><div class="ct">Addendum — verified edge cases</div>
+<ul><li>Whitespace/case differences in SQL prevent reuse (lower vs UPPER, added aliases).</li><li>Even COUNT (*) vs COUNT(*) can break reuse.</li><li>Schema changes (add/remove columns) invalidate even with unchanged data.</li><li>Reuse is never guaranteed even when all conditions hold — Snowflake decides.</li></ul></div>
+<h3>17.2 Metadata Cache (Cloud Services)</h3>
+<p>Persistent per-partition statistics. Some queries never need a warehouse: SELECT COUNT(*) FROM t; MIN/MAX on a column; DESCRIBE / SHOW. Milliseconds, no compute.</p>
+<h3>17.3 Warehouse (local disk) cache</h3>
+<ul><li>Per-warehouse SSD holding micro-partitions read from remote storage.</li><li>Persists while running; DROPPED on suspend and on resize; mostly retained when clusters are added.</li></ul>
+<h3>17.4 Lookup order & implications</h3>
+<pre>1. Result Cache     (Cloud Services)  ms
+2. Metadata Cache   (Cloud Services)  ms
+3. Warehouse Cache  (local SSD)       fast
+4. Remote storage   (S3/Blob/GCS)     slowest</pre>
+<ul><li>First query after resume = cold cache. Aggressive auto-suspend trades credits for cache warmth — tune per workload.</li><li>Identical dashboard queries across many users → result-cache magic, near-zero compute.</li><li>Modifying ANY row invalidates result cache for queries on that table.</li></ul>`,
+
+18: `
+<h3>18.1 The big picture</h3>
+<table class="t"><tr><th>Feature</th><th>Problem</th><th>Edition</th><th>Cost model</th></tr>
+<tr><td>Clustering key</td><td>Poor pruning on range/equality</td><td>All</td><td>Serverless reclustering</td></tr>
+<tr><td>Materialized view</td><td>Repeated aggregations</td><td>Ent+</td><td>Storage + refresh</td></tr>
+<tr><td>Search Optimization</td><td>Point/substring lookups</td><td>Ent+</td><td>Storage + maintenance</td></tr>
+<tr><td>Query Acceleration</td><td>Outlier large queries</td><td>Ent+</td><td>Pay-per-use serverless</td></tr></table>
+<h3>18.2 Clustering keys</h3>
+<pre>ALTER TABLE orders CLUSTER BY (order_date, region);
+SELECT SYSTEM$CLUSTERING_INFORMATION('orders');
+SELECT SYSTEM$CLUSTERING_DEPTH('orders');</pre>
+<p>Best: range filters on date/timestamp, selective equality on high-cardinality columns, tables &gt; ~1 TB. Not for: small tables, frequently-updated tables (constant reclustering is expensive), rarely-filtered columns.</p>
+<h3>18.3 Materialized views</h3>
+<pre>CREATE MATERIALIZED VIEW sales_daily AS
+SELECT region, DATE(order_date) d, SUM(amount) tot
+FROM orders GROUP BY region, DATE(order_date);</pre>
+<p>Auto-refreshed serverlessly; matching queries on the base table are rewritten to use the MV automatically. Limits: single base table, no UDFs/window functions/ROLLUP/CUBE, limited aggregates.</p>
+<h3>18.4 Search Optimization Service</h3>
+<pre>ALTER TABLE customers ADD SEARCH OPTIMIZATION
+  ON EQUALITY(email), SUBSTRING(name);</pre>
+<p>Persistent search structure for point lookups, substring and geo queries on non-clustered columns — e.g. lookup by email where clustering would not help.</p>
+<h3>18.5 Query Acceleration Service</h3>
+<pre>ALTER WAREHOUSE my_wh SET
+  ENABLE_QUERY_ACCELERATION = TRUE
+  QUERY_ACCELERATION_MAX_SCALE_FACTOR = 8;</pre>
+<p>Short-lived serverless compute for the expensive parts of outlier queries on a small warehouse. Pay only when used.</p>
+<h3>18.6 Decision tree</h3>
+<ul><li>Date-range filter, big table, poor pruning → CLUSTERING KEY</li><li>Point lookups on email/UUID → SEARCH OPTIMIZATION</li><li>Same aggregation thousands of times daily → MATERIALIZED VIEW</li><li>Mostly small queries + occasional monster → QUERY ACCELERATION</li><li>Remote-disk spilling → SCALE UP · Queueing → SCALE OUT</li></ul>`,
+
+19: `
+<h3>19.1 Time Travel</h3>
+<pre>SELECT * FROM orders AT
+ (TIMESTAMP=>'2025-01-15 10:00:00'::TIMESTAMP);
+SELECT * FROM orders AT (OFFSET=>-3600);
+SELECT * FROM orders BEFORE (STATEMENT=>'01a2…');
+UNDROP TABLE orders;
+UNDROP DATABASE my_db;
+CREATE TABLE orders_restored
+  CLONE orders AT (OFFSET=>-3600);</pre>
+<table class="t"><tr><th>Table type</th><th>Standard</th><th>Enterprise+</th></tr>
+<tr><td>Permanent</td><td>0–1 day (default 1)</td><td>0–90 days</td></tr>
+<tr><td>Transient</td><td>0–1 day</td><td>0–1 day</td></tr>
+<tr><td>Temporary</td><td>0–1 day (session)</td><td>0–1 day (session)</td></tr></table>
+<div class="callout"><div class="ct">Addendum — retention inheritance</div><p>On Ent+, retention can be set on databases, schemas OR tables; children inherit from the parent unless explicitly overridden — and the explicit setting on an object wins for that object.</p>
+<pre>CREATE DATABASE my_db DATA_RETENTION_TIME_IN_DAYS=30;
+CREATE TABLE my_db.public.t DATA_RETENTION_TIME_IN_DAYS=7;</pre></div>
+<h3>19.2 Fail-safe</h3>
+<pre>Day 0        table dropped
+Day 0–1/90   Time Travel — UNDROP, AT/BEFORE
+Day +7       Fail-safe — Snowflake support only
+After        gone forever</pre>
+<p>7 days fixed, permanent tables only, not user-queryable, cannot be disabled or configured. Storage cost shows in STORAGE_USAGE. CDP = Time Travel + Fail-safe + always-on encryption + RBAC.</p>
+<h3>19.3 Zero-copy cloning</h3>
+<pre>CREATE TABLE orders_dev CLONE orders;
+CREATE DATABASE my_db_clone CLONE my_db;
+CREATE TABLE orders_yday
+  CLONE orders AT (OFFSET=>-86400);</pre>
+<p>Metadata-only; clone shares partitions with the source; copy-on-write means storage grows only with divergence. Cloned: tables, views, schemas, databases, stages, file formats, sequences, streams, tasks. NOT cloned by default: internal stage files, pipes, load history. External tables clone but point at the same external location.</p>
+<h3>19.4 Secure Data Sharing</h3>
+<pre>-- provider
+CREATE SHARE customer_share;
+GRANT USAGE ON DATABASE shared_db TO SHARE customer_share;
+GRANT SELECT ON ALL TABLES IN SCHEMA shared_db.public
+  TO SHARE customer_share;
+ALTER SHARE customer_share ADD ACCOUNTS=org.acct;
+-- consumer
+CREATE DATABASE customer_data
+  FROM SHARE org.acct.customer_share;</pre>
+<p>Zero copy — consumer reads provider data directly. Provider pays storage, consumer pays compute. Same region only (cross-region needs replication first). Consumer is read-only; resharing possible with restrictions.</p>
+<h3>19.5–19.9 Reader accounts, Marketplace & more</h3>
+<ul>
+<li><b>Reader accounts:</b> for consumers without Snowflake — provider creates, manages and pays for everything; default limit 1 (request more).</li>
+<li><b>Marketplace:</b> public listings (discoverable, free or paid — Snowflake handles billing) or private listings (invite-only B2B).</li>
+<li><b>Data Clean Rooms:</b> multi-party analytics on combined data with pre-approved queries; nobody sees raw records.</li>
+<li><b>Native Apps:</b> full applications distributed via Marketplace, running inside the CONSUMER's account — data never leaves.</li>
+<li><b>Replication (Ent+):</b> async database replication cross-region/cloud. <b>Failover/failback (BC+):</b> promote a replica for DR.</li></ul>`
+};
+
+/* =============== STATE & STORAGE =============== */
+let S = { scores:{}, missed:{}, done:{} };   // scores[day]=[{d,s,t}], missed[qid]=day, done[day]=true
+let storageOK = false;
+
+const KEY = "snowpro-cof-c03-state";
+async function loadState(){
+  try{
+    if(window.storage){            // running as a Claude artifact
+      try{ const r = await window.storage.get(KEY);
+           if(r && r.value) S = Object.assign(S, JSON.parse(r.value)); }catch(e){}
+      storageOK = true;
+    } else if(typeof localStorage !== "undefined"){   // standalone in a browser
+      const v = localStorage.getItem(KEY);
+      if(v) S = Object.assign(S, JSON.parse(v));
+      storageOK = true;
+    }
+  }catch(e){ /* private browsing etc. — run in-memory */ }
+}
+async function saveState(){
+  const v = JSON.stringify(S);
+  try{
+    if(window.storage){ await window.storage.set(KEY, v); }
+    else if(typeof localStorage !== "undefined"){ localStorage.setItem(KEY, v); }
+  }catch(e){ console.error("save failed", e); }
+}
+
+/* =============== HELPERS =============== */
+const $ = s=>document.querySelector(s);
+const app = document.getElementById("app");
+const dayByN = n => DAYS.find(d=>d.n===n);
+const esc = t=>t; // content is trusted local data
+
+function bestPct(n){
+  const a = S.scores[n]; if(!a || !a.length) return null;
+  return Math.max(...a.map(x=>Math.round(100*x.s/x.t)));
+}
+function scoreClass(p){ return p>=80 ? "good" : p>=60 ? "mid" : "low"; }
+function scoreColor(p){ return p>=80 ? "var(--melt)" : p>=60 ? "var(--amber)" : "var(--coral)"; }
+function missedList(){
+  const out=[];
+  for(const qid in S.missed){
+    const dn = S.missed[qid];
+    const day = dayByN(dn); if(!day || !day.quiz) continue;
+    const q = day.quiz.find(x=>x.id===qid);
+    if(q) out.push(Object.assign({day:dn}, q));
+  }
+  return out;
+}
+
+/* =============== HOME =============== */
+function renderHome(){
+  let cells = "";
+  for(const d of DAYS){
+    const p = bestPct(d.n);
+    let fill = "";
+    if(d.type && S.done[d.n]) fill = '<div class="fill" style="height:100%;background:rgba(91,208,232,.35)"></div>';
+    else if(p!==null) fill = '<div class="fill" style="height:'+Math.max(p,12)+'%;background:'+scoreColor(p)+'"></div>';
+    cells += '<button class="cell" onclick="openDay('+d.n+')">'+fill+'<span class="mono">'+d.n+'</span></button>';
+  }
+  const doneCount = DAYS.filter(d=> (d.type && S.done[d.n]) || bestPct(d.n)!==null ).length;
+
+  const phases = [[1,"Phase 1 · Architecture"],[2,"Phase 2 · Security & Governance"],[3,"Phase 3 · Loading & Connectivity"],[4,"Phase 4 · Performance"],[5,"Phase 5 · Collaboration"]];
+  let list = "";
+  const special = {15:"Practice Exam #1", 20:"Weak-Spot Review", 21:"Practice Exam #2"};
+  const order = DAYS.slice().sort((a,b)=>a.n-b.n);
+  let lastHeader = "";
+  for(const d of order){
+    let header = d.type ? "Milestones" : (phases.find(p=>p[0]===d.phase)||[])[1];
+    if(d.n===15) header = "Milestone · Day 15";
+    if(d.n===20) header = "Final stretch";
+    if(d.n===21) header = "";
+    if(d.phase>0){ header = (phases.find(p=>p[0]===d.phase))[1]; }
+    if(header && header!==lastHeader){ list += '<div class="phase">'+header+'</div>'; lastHeader = header; }
+    const p = bestPct(d.n);
+    let badge;
+    if(d.type){ badge = S.done[d.n] ? '<span class="badge b-done">Done</span>' : '<span class="badge b-none">To do</span>'; }
+    else if(p===null){ badge = '<span class="badge b-none">—</span>'; }
+    else { badge = '<span class="badge b-'+scoreClass(p)+'">'+p+'%</span>'; }
+    list += '<button class="dayrow" onclick="openDay('+d.n+')">'+
+      '<span class="dnum mono">'+String(d.n).padStart(2,"0")+'</span>'+
+      '<span style="flex:1"><span class="dtitle">'+d.title+'</span><br><span class="dmeta">'+d.domain+'</span></span>'+badge+'</button>';
+  }
+
+  app.innerHTML =
+    '<div class="top"><h1>SnowPro Core Trainer</h1><span class="code mono">COF-C03</span></div>'+
+    '<div class="sub">21 days · read → quiz → flashcards · scores saved per day</div>'+
+    '<div class="strip">'+cells+'</div>'+
+    '<div class="striplabel"><b>'+doneCount+'</b> of 21 partitions filled · green ≥ 80% · redo anything amber or red</div>'+
+    list+
+    '<div class="homebtns">'+
+      '<button class="ghost" onclick="renderCheat()">Cheat sheet</button>'+
+      '<button class="ghost" onclick="renderBackup()">Backup / sync</button>'+
+      '<button class="ghost" onclick="resetAll()">Reset</button>'+
+    '</div>'+
+    (storageOK ? '' : '<div class="notice">Storage unavailable (private browsing?) — progress will not persist after closing.</div>');
+  window.scrollTo(0,0);
+}
+
+async function resetAll(){
+  if(!confirm("Clear all scores, missed questions and checkmarks?")) return;
+  S = {scores:{}, missed:{}, done:{}};
+  await saveState(); renderHome();
+}
+
+/* =============== DAY SCREEN =============== */
+let cur = null; // {n, tab}
+function openDay(n, tab){
+  const d = dayByN(n);
+  cur = {n:n, tab: tab || (d.type ? "spec" : "study")};
+  renderDay();
+}
+function renderDay(){
+  const d = dayByN(cur.n);
+  let head = '<button class="back" onclick="renderHome()">‹ All days</button>'+
+    '<div class="dayhead"><div class="eyebrow mono">DAY '+String(d.n).padStart(2,"0")+'</div>'+
+    '<h2>'+d.title+'</h2><div class="domain">'+d.domain+'</div></div>';
+
+  if(d.type){ app.innerHTML = head + renderSpecial(d); window.scrollTo(0,0); return; }
+
+  const tabs = [["study","Study"],["cards","Cards"],["quiz","Quiz"]];
+  let tabbar = '<div class="tabs">'+tabs.map(t=>
+    '<button class="tab'+(cur.tab===t[0]?" on":"")+'" onclick="switchTab(\''+t[0]+'\')">'+t[1]+'</button>').join("")+'</div>';
+
+  let body = "";
+  if(cur.tab==="study") body = renderStudy(d);
+  else if(cur.tab==="cards") body = ""; // rendered after
+  else body = ""; // quiz rendered after
+
+  app.innerHTML = head + tabbar + '<div id="body">'+body+'</div>';
+  if(cur.tab==="cards") startCards(d);
+  if(cur.tab==="quiz") startQuiz(d.quiz, d.n, false);
+  window.scrollTo(0,0);
+}
+function switchTab(t){ cur.tab = t; renderDay(); }
+
+function renderStudy(d){
+  let html = '<div class="keybox"><div class="ct">Key points — recall these cold</div>'+
+    '<ul class="study">'+d.study.map(s=>"<li>"+s+"</li>").join("")+'</ul></div>';
+  if(typeof MATERIAL!=="undefined" && MATERIAL[d.n]) html += '<div class="material">'+MATERIAL[d.n]+'</div>';
+  if(d.addendum){
+    html += '<div class="callout"><div class="ct">'+d.addendum.title+'</div><ul>'+
+      d.addendum.items.map(i=>"<li>"+i+"</li>").join("")+'</ul></div>';
+  }
+  html += '<button class="primary" onclick="switchTab(\'cards\')">Continue to flashcards</button>';
+  return html;
+}
+
+/* =============== SPECIAL DAYS =============== */
+function renderSpecial(d){
+  const sp = d.spec;
+  let steps = '<ul>'+sp.steps.map(s=>"<li>"+s+"</li>").join("")+'</ul>';
+  let extra = "";
+  if(d.type==="review"){
+    const miss = missedList();
+    if(miss.length){
+      extra = '<h3>Your missed questions ('+miss.length+')</h3>'+
+        '<p>Collected automatically from every quiz attempt. Clear them all to finish Day 20.</p>'+
+        '<button class="primary" onclick="startWeakQuiz()">Redo missed questions</button>';
+    } else {
+      extra = '<h3>Your missed questions</h3><p>Nothing in the weak list right now — either you have not taken the quizzes yet, or you have cleared them all. Re-skim the checklist above instead.</p>';
+    }
+  }
+  const on = S.done[d.n] ? " on" : "";
+  const tickmark = S.done[d.n] ? "✓" : "";
+  return '<div class="spec"><p>'+sp.intro+'</p>'+steps+
+    '<p style="color:var(--mist);font-size:.82rem">'+sp.score+'</p>'+extra+
+    '<button class="toggle'+on+'" onclick="toggleDone('+d.n+')"><span class="tick">'+tickmark+'</span> Mark Day '+d.n+' complete</button></div>';
+}
+async function toggleDone(n){
+  S.done[n] = !S.done[n]; if(!S.done[n]) delete S.done[n];
+  await saveState(); renderDay();
+}
+function startWeakQuiz(){
+  const miss = missedList();
+  app.innerHTML = '<button class="back" onclick="openDay(20)">‹ Day 20</button>'+
+    '<div class="dayhead"><div class="eyebrow mono">WEAK-SPOT REVIEW</div><h2>Missed questions</h2>'+
+    '<div class="domain">Answer correctly to clear each one from the list</div></div><div id="body"></div>';
+  startQuiz(miss, null, true);
+}
+
+/* =============== FLASHCARDS =============== */
+let C = null;
+function startCards(d){
+  C = { deck: d.cards.slice(), i:0, flipped:false, missPile:[], got:0, total:d.cards.length, round:1 };
+  drawCard();
+}
+function drawCard(){
+  const b = $("#body");
+  if(C.i >= C.deck.length){
+    if(C.missPile.length){
+      C.deck = C.missPile; C.missPile = []; C.i = 0; C.flipped=false; C.round++;
+      b.innerHTML = '<div class="result"><div class="big" style="font-size:1.6rem">Round '+C.round+'</div>'+
+        '<div class="msg">'+C.deck.length+' card'+(C.deck.length>1?"s":"")+' you missed — again until they stick.</div>'+
+        '<button class="primary" onclick="drawCard()">Go</button></div>';
+      return;
+    }
+    b.innerHTML = '<div class="result"><div class="big">✓</div>'+
+      '<div class="msg">All '+C.total+' cards recalled. Now take the quiz.</div>'+
+      '<button class="primary" onclick="switchTab(\'quiz\')">Start quiz</button></div>';
+    return;
+  }
+  const c = C.deck[C.i];
+  b.innerHTML =
+    '<div class="prog"><span>Card '+(C.i+1)+' / '+C.deck.length+(C.round>1?" · round "+C.round:"")+'</span><span>tap card to flip</span></div>'+
+    '<div class="cardwrap"><div class="fcard'+(C.flipped?" flip":"")+'" onclick="flipCard()">'+
+      '<div class="face"><span class="lbl mono">Q</span>'+c.q+'<span class="tap">tap to reveal</span></div>'+
+      '<div class="face back"><span class="lbl mono">A</span>'+c.a+'</div>'+
+    '</div></div>'+
+    '<div class="cardbtns">'+
+      '<button class="cbtn miss" onclick="markCard(false)">Missed it</button>'+
+      '<button class="cbtn got" onclick="markCard(true)">Got it</button>'+
+    '</div>';
+}
+function flipCard(){ C.flipped = !C.flipped; document.querySelector(".fcard").classList.toggle("flip", C.flipped); }
+function markCard(got){
+  if(!got) C.missPile.push(C.deck[C.i]);
+  C.i++; C.flipped=false; drawCard();
+}
+
+/* =============== QUIZ =============== */
+let Q = null;
+function startQuiz(questions, dayN, weakMode){
+  if(!questions || !questions.length){ $("#body").innerHTML = '<p style="color:var(--mist)">No questions for this day.</p>'; return; }
+  Q = { qs: questions, i:0, sel:new Set(), checked:false, score:0, dayN:dayN, weak:weakMode };
+  drawQ();
+}
+function drawQ(){
+  const b = $("#body");
+  if(Q.i >= Q.qs.length){ finishQuiz(); return; }
+  const q = Q.qs[Q.i];
+  const multi = q.ans.length>1;
+  let opts = q.opts.map((o,idx)=>{
+    let cls = "opt";
+    if(Q.checked){
+      if(q.ans.includes(idx)) cls += " right";
+      else if(Q.sel.has(idx)) cls += " wrong";
+    } else if(Q.sel.has(idx)) cls += " sel";
+    return '<button class="'+cls+'" onclick="pick('+idx+')"><span class="key mono">'+"ABCD"[idx]+'</span><span>'+o+'</span></button>';
+  }).join("");
+  let verdict = "";
+  if(Q.checked){
+    const ok = sameSet(Q.sel, q.ans);
+    verdict = '<div class="verdict '+(ok?"ok":"no")+'">'+(ok?"Correct":"Not quite — correct: "+q.ans.map(a=>"ABCD"[a]).join(", "))+'</div>';
+    if(q.note) verdict += '<div style="font-size:.8rem;color:var(--mist);margin-bottom:6px">'+q.note+'</div>';
+  }
+  b.innerHTML =
+    '<div class="prog"><span>Question '+(Q.i+1)+' / '+Q.qs.length+(Q.weak?' · from Day '+q.day:'')+'</span><span>Score '+Q.score+'</span></div>'+
+    '<div class="qtext">'+q.q+'</div>'+
+    (multi ? '<div class="qnote">Choose '+["","","two","three"][q.ans.length]+'</div>' : '')+
+    opts + verdict +
+    '<button class="primary" '+(!Q.checked && Q.sel.size===0 ? "disabled":"")+' onclick="'+(Q.checked?"nextQ()":"checkQ()")+'">'+
+      (Q.checked ? (Q.i+1<Q.qs.length ? "Next question" : "See result") : "Check answer")+'</button>';
+}
+function pick(idx){
+  if(Q.checked) return;
+  const q = Q.qs[Q.i];
+  const multi = q.ans.length>1;
+  if(multi){ Q.sel.has(idx) ? Q.sel.delete(idx) : Q.sel.add(idx); }
+  else { Q.sel = new Set([idx]); }
+  drawQ();
+}
+function sameSet(sel, ans){
+  if(sel.size !== ans.length) return false;
+  for(const a of ans) if(!sel.has(a)) return false;
+  return true;
+}
+async function checkQ(){
+  const q = Q.qs[Q.i];
+  const ok = sameSet(Q.sel, q.ans);
+  if(ok){
+    Q.score++;
+    if(S.missed[q.id]){ delete S.missed[q.id]; await saveState(); }
+  } else {
+    S.missed[q.id] = Q.weak ? q.day : Q.dayN;
+    await saveState();
+  }
+  Q.checked = true; drawQ();
+}
+function nextQ(){ Q.i++; Q.sel = new Set(); Q.checked=false; drawQ(); }
+
+async function finishQuiz(){
+  const pct = Math.round(100*Q.score/Q.qs.length);
+  let msg, save = "";
+  if(Q.weak){
+    const left = missedList().length;
+    msg = left===0 ? "Weak list cleared. That was the point of Day 20." : left+" question"+(left>1?"s":"")+" still on the weak list — run it again.";
+  } else {
+    if(!S.scores[Q.dayN]) S.scores[Q.dayN] = [];
+    S.scores[Q.dayN].push({d:new Date().toISOString().slice(0,10), s:Q.score, t:Q.qs.length});
+    await saveState();
+    msg = pct>=80 ? "Solid — this day is green. Move on." :
+          pct>=60 ? "Close. Re-read the study notes, then retake to turn this green." :
+          "Below the bar — redo the study tab and flashcards before retaking.";
+  }
+  const atts = (!Q.weak && S.scores[Q.dayN]) ?
+    '<div class="attempts"><h4>Attempts</h4>'+S.scores[Q.dayN].slice().reverse().map(a=>
+      '<div class="att"><span>'+a.d+'</span><b>'+a.s+' / '+a.t+' · '+Math.round(100*a.s/a.t)+'%</b></div>').join("")+'</div>' : "";
+  $("#body").innerHTML =
+    '<div class="result"><div class="big" style="color:'+scoreColor(pct)+'">'+pct+'%</div>'+
+    '<div class="of">'+Q.score+' of '+Q.qs.length+' correct</div>'+
+    '<div class="msg">'+msg+'</div>'+
+    '<button class="primary" onclick="'+(Q.weak?"startWeakQuiz()":"switchTab(\'quiz\')")+'">Retake</button>'+
+    '<button class="ghost" style="width:100%;margin-top:8px" onclick="'+(Q.weak?"openDay(20)":"renderHome()")+'">'+(Q.weak?"Back to Day 20":"Back to all days")+'</button>'+
+    atts+'</div>';
+}
+
+/* =============== BACKUP / SYNC =============== */
+function renderBackup(){
+  app.innerHTML = '<button class="back" onclick="renderHome()">‹ All days</button>'+
+    '<div class="dayhead"><div class="eyebrow mono">BACKUP / SYNC</div><h2>Move progress between devices</h2>'+
+    '<div class="domain">Progress is saved on this device. To sync: copy the code below on one device, paste it here on the other, then Load.</div></div>'+
+    '<textarea class="backuparea" id="bk">'+JSON.stringify(S)+'</textarea>'+
+    '<button class="primary" onclick="copyBackup()">Copy code</button>'+
+    '<button class="primary" style="background:var(--frost2);color:var(--ice);margin-top:8px" onclick="loadBackup()">Load pasted code</button>'+
+    '<div class="notice">Tip: message the code to yourself, then open this page on the other device and paste it in.</div>';
+  window.scrollTo(0,0);
+}
+function copyBackup(){
+  const t = document.getElementById("bk");
+  t.select(); t.setSelectionRange(0, 999999);
+  try{ navigator.clipboard.writeText(t.value); alert("Copied. Paste it into Backup / sync on your other device."); }
+  catch(e){ document.execCommand("copy"); alert("Copied."); }
+}
+async function loadBackup(){
+  try{
+    const v = JSON.parse(document.getElementById("bk").value);
+    if(typeof v !== "object" || !("scores" in v)) throw new Error("bad shape");
+    S = Object.assign({scores:{},missed:{},done:{}}, v);
+    await saveState();
+    alert("Progress loaded.");
+    renderHome();
+  }catch(e){ alert("That code could not be read — paste the exact code copied from the other device."); }
+}
+
+/* =============== CHEAT SHEET =============== */
+function renderCheat(){
+  let html = '<button class="back" onclick="renderHome()">‹ All days</button>'+
+    '<div class="dayhead"><div class="eyebrow mono">EXAM MORNING</div><h2>High-yield cheat sheet</h2>'+
+    '<div class="domain">Skim once before you walk in</div></div><div class="cheat">';
+  for(const s of CHEAT){
+    html += '<h3>'+s.h+'</h3><ul>'+s.items.map(i=>"<li>"+i+"</li>").join("")+'</ul>';
+  }
+  html += '</div>';
+  app.innerHTML = html; window.scrollTo(0,0);
+}
+
+/* =============== BOOT =============== */
+(async function(){
+  await loadState();
+  renderHome();
+})();
+</script>
+</body>
+</html>
