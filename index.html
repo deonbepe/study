@@ -1135,33 +1135,46 @@ function missedList(){
 }
 
 /* =============== HOME =============== */
+function topbarBack(backCall, label, chip){
+  return '<header class="topbar"><button class="backbtn" onclick="'+backCall+'"><span class="chev">‹</span> '+label+'</button>'+
+         '<span class="tbspacer"></span>'+(chip?'<span class="chip mono">'+chip+'</span>':'')+'</header>';
+}
+
 function renderHome(){
-  let cells = "";
-  for(const d of DAYS){
-    const p = bestPct(d.n);
-    let fill = "";
-    if(d.type && S.done[d.n]) fill = '<div class="fill" style="height:100%;background:rgba(91,208,232,.35)"></div>';
-    else if(p!==null) fill = '<div class="fill" style="height:'+Math.max(p,12)+'%;background:'+scoreColor(p)+'"></div>';
-    cells += '<button class="cell" onclick="openDay('+d.n+')">'+fill+'<span class="mono">'+d.n+'</span></button>';
+  // stats
+  const scored = DAYS.filter(d=>!d.type && bestPct(d.n)!==null);
+  const greens = scored.filter(d=>bestPct(d.n)>=80).length;
+  const avg = scored.length ? Math.round(scored.reduce((a,d)=>a+bestPct(d.n),0)/scored.length) : null;
+  const milestonesDone = DAYS.filter(d=>d.type && S.done[d.n]).length;
+  const doneCount = scored.length + milestonesDone;
+  const weak = missedList().length;
+
+  // calendar 7x3
+  let cal = "";
+  for(const d of DAYS.slice().sort((a,b)=>a.n-b.n)){
+    let cls = "calcell", sub = "";
+    if(d.type){
+      sub = d.n===20 ? "REVIEW" : "EXAM";
+      if(S.done[d.n]) cls += " c-done";
+    } else {
+      const p = bestPct(d.n);
+      if(p!==null){ cls += " c-"+scoreClass(p); sub = p+"%"; }
+    }
+    cal += '<button class="'+cls+'" onclick="openDay('+d.n+')">'+d.n+'<span class="cs">'+sub+'</span></button>';
   }
-  const doneCount = DAYS.filter(d=> (d.type && S.done[d.n]) || bestPct(d.n)!==null ).length;
 
   const phases = [[1,"Phase 1 · Architecture"],[2,"Phase 2 · Security & Governance"],[3,"Phase 3 · Loading & Connectivity"],[4,"Phase 4 · Performance"],[5,"Phase 5 · Collaboration"]];
-  let list = "";
-  const special = {15:"Practice Exam #1", 20:"Weak-Spot Review", 21:"Practice Exam #2"};
-  const order = DAYS.slice().sort((a,b)=>a.n-b.n);
-  let lastHeader = "";
-  for(const d of order){
-    let header = d.type ? "Milestones" : (phases.find(p=>p[0]===d.phase)||[])[1];
-    if(d.n===15) header = "Milestone · Day 15";
-    if(d.n===20) header = "Final stretch";
-    if(d.n===21) header = "";
-    if(d.phase>0){ header = (phases.find(p=>p[0]===d.phase))[1]; }
-    if(header && header!==lastHeader){ list += '<div class="phase">'+header+'</div>'; lastHeader = header; }
+  let list = "", lastHeader = "";
+  for(const d of DAYS.slice().sort((a,b)=>a.n-b.n)){
+    let header;
+    if(d.n===15) header = "Milestone";
+    else if(d.n>=20) header = "Final stretch";
+    else header = (phases.find(p=>p[0]===d.phase))[1];
+    if(header!==lastHeader){ list += '<div class="phase">'+header+'</div>'; lastHeader = header; }
     const p = bestPct(d.n);
     let badge;
     if(d.type){ badge = S.done[d.n] ? '<span class="badge b-done">Done</span>' : '<span class="badge b-none">To do</span>'; }
-    else if(p===null){ badge = '<span class="badge b-none">—</span>'; }
+    else if(p===null){ badge = '<span class="badge b-none">Start</span>'; }
     else { badge = '<span class="badge b-'+scoreClass(p)+'">'+p+'%</span>'; }
     list += '<button class="dayrow" onclick="openDay('+d.n+')">'+
       '<span class="dnum mono">'+String(d.n).padStart(2,"0")+'</span>'+
@@ -1169,17 +1182,29 @@ function renderHome(){
   }
 
   app.innerHTML =
-    '<div class="top"><h1>SnowPro Core Trainer</h1><span class="code mono">COF-C03</span></div>'+
-    '<div class="sub">21 days · read → quiz → flashcards · scores saved per day</div>'+
-    '<div class="strip">'+cells+'</div>'+
-    '<div class="striplabel"><b>'+doneCount+'</b> of 21 partitions filled · green ≥ 80% · redo anything amber or red</div>'+
+    '<header class="topbar"><span class="apptitle">SnowPro Core Trainer</span><span class="tbspacer"></span><span class="chip mono">COF-C03</span></header>'+
+    '<div class="page">'+
+    '<div class="sub">Read → cards → quiz, one day at a time. Green a day at 80%+, redo anything amber or red.</div>'+
+    '<div class="stats">'+
+      '<div class="stat"><b>'+doneCount+'<span style="font-size:1rem;color:var(--mist)">/21</span></b><span>Days done</span></div>'+
+      '<div class="stat"><b>'+(avg===null?"—":avg+"%")+'</b><span>Avg best</span></div>'+
+      '<div class="stat"><b style="color:'+(weak? "var(--coral)":"var(--melt)")+'">'+weak+'</b><span>Weak list</span></div>'+
+    '</div>'+
+    '<div class="cal">'+cal+'</div>'+
+    '<div class="legend">'+
+      '<span><span class="dotd" style="background:rgba(111,209,154,.7)"></span>80%+</span>'+
+      '<span><span class="dotd" style="background:rgba(232,196,104,.7)"></span>60–79%</span>'+
+      '<span><span class="dotd" style="background:rgba(233,118,111,.7)"></span>&lt;60%</span>'+
+      '<span><span class="dotd" style="background:rgba(91,208,232,.7)"></span>Milestone done</span>'+
+    '</div>'+
     list+
     '<div class="homebtns">'+
       '<button class="ghost" onclick="renderCheat()">Cheat sheet</button>'+
       '<button class="ghost" onclick="renderBackup()">Backup / sync</button>'+
       '<button class="ghost" onclick="resetAll()">Reset</button>'+
     '</div>'+
-    (storageOK ? '' : '<div class="notice">Storage unavailable (private browsing?) — progress will not persist after closing.</div>');
+    (storageOK ? '' : '<div class="notice">Storage unavailable (private browsing?) — progress will not persist after closing.</div>')+
+    '</div>';
   window.scrollTo(0,0);
 }
 
@@ -1198,22 +1223,20 @@ function openDay(n, tab){
 }
 function renderDay(){
   const d = dayByN(cur.n);
-  let head = '<button class="back" onclick="renderHome()">‹ All days</button>'+
-    '<div class="dayhead"><div class="eyebrow mono">DAY '+String(d.n).padStart(2,"0")+'</div>'+
-    '<h2>'+d.title+'</h2><div class="domain">'+d.domain+'</div></div>';
+  const top = topbarBack("renderHome()", "All days", "DAY "+String(d.n).padStart(2,"0"));
+  const head = '<div class="dayhead"><h2>'+d.title+'</h2><div class="domain">'+d.domain+'</div></div>';
 
-  if(d.type){ app.innerHTML = head + renderSpecial(d); window.scrollTo(0,0); return; }
+  if(d.type){
+    app.innerHTML = top + '<div class="page">' + head + renderSpecial(d) + '</div>';
+    window.scrollTo(0,0); return;
+  }
 
   const tabs = [["study","Study"],["cards","Cards"],["quiz","Quiz"]];
-  let tabbar = '<div class="tabs">'+tabs.map(t=>
-    '<button class="tab'+(cur.tab===t[0]?" on":"")+'" onclick="switchTab(\''+t[0]+'\')">'+t[1]+'</button>').join("")+'</div>';
+  const tabbar = '<nav class="tabbar">'+tabs.map(t=>
+    '<button class="tbtn'+(cur.tab===t[0]?" on":"")+'" onclick="switchTab(\''+t[0]+'\')">'+t[1]+'</button>').join("")+'</nav>';
 
-  let body = "";
-  if(cur.tab==="study") body = renderStudy(d);
-  else if(cur.tab==="cards") body = ""; // rendered after
-  else body = ""; // quiz rendered after
-
-  app.innerHTML = head + tabbar + '<div id="body">'+body+'</div>';
+  app.innerHTML = top + '<div class="page">' + head + '<div id="body">'+
+    (cur.tab==="study" ? renderStudy(d) : "")+'</div></div>' + tabbar;
   if(cur.tab==="cards") startCards(d);
   if(cur.tab==="quiz") startQuiz(d.quiz, d.n, false);
   window.scrollTo(0,0);
@@ -1259,9 +1282,9 @@ async function toggleDone(n){
 }
 function startWeakQuiz(){
   const miss = missedList();
-  app.innerHTML = '<button class="back" onclick="openDay(20)">‹ Day 20</button>'+
-    '<div class="dayhead"><div class="eyebrow mono">WEAK-SPOT REVIEW</div><h2>Missed questions</h2>'+
-    '<div class="domain">Answer correctly to clear each one from the list</div></div><div id="body"></div>';
+  app.innerHTML = topbarBack("openDay(20)", "Day 20", "WEAK LIST")+
+    '<div class="page"><div class="dayhead"><h2>Missed questions</h2>'+
+    '<div class="domain">Answer correctly to clear each one from the list</div></div><div id="body"></div></div>';
   startQuiz(miss, null, true);
 }
 
@@ -1393,13 +1416,13 @@ async function finishQuiz(){
 
 /* =============== BACKUP / SYNC =============== */
 function renderBackup(){
-  app.innerHTML = '<button class="back" onclick="renderHome()">‹ All days</button>'+
-    '<div class="dayhead"><div class="eyebrow mono">BACKUP / SYNC</div><h2>Move progress between devices</h2>'+
+  app.innerHTML = topbarBack("renderHome()", "All days", "SYNC")+
+    '<div class="page"><div class="dayhead"><h2>Move progress between devices</h2>'+
     '<div class="domain">Progress is saved on this device. To sync: copy the code below on one device, paste it here on the other, then Load.</div></div>'+
     '<textarea class="backuparea" id="bk">'+JSON.stringify(S)+'</textarea>'+
     '<button class="primary" onclick="copyBackup()">Copy code</button>'+
     '<button class="primary" style="background:var(--frost2);color:var(--ice);margin-top:8px" onclick="loadBackup()">Load pasted code</button>'+
-    '<div class="notice">Tip: message the code to yourself, then open this page on the other device and paste it in.</div>';
+    '<div class="notice">Tip: message the code to yourself, then open this page on the other device and paste it in.</div></div>';
   window.scrollTo(0,0);
 }
 function copyBackup(){
@@ -1421,13 +1444,13 @@ async function loadBackup(){
 
 /* =============== CHEAT SHEET =============== */
 function renderCheat(){
-  let html = '<button class="back" onclick="renderHome()">‹ All days</button>'+
-    '<div class="dayhead"><div class="eyebrow mono">EXAM MORNING</div><h2>High-yield cheat sheet</h2>'+
+  let html = topbarBack("renderHome()", "All days", "EXAM AM")+
+    '<div class="page"><div class="dayhead"><h2>High-yield cheat sheet</h2>'+
     '<div class="domain">Skim once before you walk in</div></div><div class="cheat">';
   for(const s of CHEAT){
     html += '<h3>'+s.h+'</h3><ul>'+s.items.map(i=>"<li>"+i+"</li>").join("")+'</ul>';
   }
-  html += '</div>';
+  html += '</div></div>';
   app.innerHTML = html; window.scrollTo(0,0);
 }
 
